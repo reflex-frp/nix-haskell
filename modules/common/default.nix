@@ -58,7 +58,7 @@ in {
     // import ./src.nix { inherit lib pkgs config; }
     // import ./cabal-project.nix { inherit lib; }
     // import ./compiler.nix { inherit lib; }
-    // import ./fine-grained.nix { inherit lib config topConfig; }
+    // import ./fine-grained.nix { inherit lib config topConfig pkgs; }
     // packagesOptions
     # `platforms` carries the `packages` option itself, not a copy, so this
     # import threads in the packages fragment's result.

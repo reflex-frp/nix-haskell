@@ -6,7 +6,7 @@
 # mirror. `nixpkgs.fine-grained.<field>` or `haskell-nix.fine-grained.<field>`
 # overrides a field for that driver only. The `sandstone` default reads
 # `topConfig.inputs`: a driver mirror's `config` carries no `inputs`.
-{ lib, config, topConfig }:
+{ lib, config, topConfig, pkgs }:
 
 with lib;
 with (import ../../libs/prelude { inherit lib; });
@@ -105,6 +105,22 @@ in {
             The Nix that these builds need, with dynamic derivations and
             the `builder-rpc-v0` system feature. Build it and run it as
             the daemon, or drive a store of its own with it.
+          '';
+        };
+
+        run = mkOption {
+          type = types.package;
+          default = import ../../libs/fine-grained/run.nix {
+            inherit pkgs;
+            nix = config.fine-grained.nix;
+          };
+          defaultText = fenced-code ''<nix-haskell>/libs/fine-grained/run.nix'';
+          description = ''
+            `bin/fine-grained-nix`: the Nix of `nix` above, driving a
+            store of its own with the features on, for a machine whose
+            daemon carries none of them. The machine's store fills that
+            one by copy. `NIX_DYNAMIC_DRV_STORE` names the store, and
+            unset it is `.nix/store` under the nearest project root.
           '';
         };
 

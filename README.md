@@ -397,7 +397,8 @@ than a stock Nix:
 - A plan's builder speaks `builder-rpc-v0`, a system feature that only the
   Nix sandstone pins carries.
 
-`fine-grained.nix` is that Nix, and the example wraps it, once per driver:
+`fine-grained.nix` is that Nix, and `fine-grained.run` wraps it as
+`bin/fine-grained-nix`; the example exposes both:
 
 ```console
 $ nix-build examples/fine-grained -A run
@@ -406,9 +407,11 @@ $ ./result/bin/fine-grained-nix build -f examples/fine-grained library-haskell-n
 ```
 
 The wrapper drives a store of its own, which is what lets it work while the
-daemon carries none of the features. `FINE_GRAINED_STORE` names that store,
-and the machine's own store fills it, so a path built here is copied rather
-than downloaded.
+daemon carries none of the features. `NIX_DYNAMIC_DRV_STORE` names that
+store. Unset, it is `.nix/store` under the project root, the first
+directory upward from the working directory that holds `.nix`,
+`cabal.project`, or `.git`. The machine's own store fills it, so a path
+built here is copied rather than downloaded.
 
 A plan has to configure the package the way the package's own build
 configures it. Otherwise ghc turns the modules down and compiles them

@@ -215,6 +215,7 @@ in {
       "fine-grained.sandstone".via = "the checkout `tool` and `nix` default to";
       "fine-grained.tool".via = "`cabal-dyn-drv`, which every plan hands over to";
       "fine-grained.nix".via = "consumed by no build; the Nix a user runs these builds with";
+      "fine-grained.run".via = "consumed by no build; `fine-grained.nix` wrapped with a store of its own, for a user on a stock daemon";
       "fine-grained.ghc-shim".via = "applied to the project's ghc; the compiler a plan's configure records";
       "fine-grained.configure-flags".via = "each plan's configure flags, computed from the library component's own config";
       "fine-grained.intermediates".via = "each plan derivation, whose output the library's `preBuild` restores";
