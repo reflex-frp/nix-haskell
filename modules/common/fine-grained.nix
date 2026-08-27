@@ -11,13 +11,21 @@
 with lib;
 with (import ../../libs/prelude { inherit lib; });
 
-{
+let prefix = import ../../libs/message-prefix.nix {};
+
+    fineGrainedExperimental = prefix
+      ("fine-grained builds are experimental. They stand on experimental"
+       + " Nix features, and a plan is sensitive to anything that changes"
+       + " a build way beyond what its steps read. A mismatch costs"
+       + " recompilation, up to all of it.");
+
+in {
 
   fine-grained = mkOption {
     default = {};
     description = ''
-      Builds the selected packages one module at a time, so that a change
-      to one module rebuilds one module. Evaluation reads
+      Experimental: builds the selected packages one module at a time, so
+      that a change to one module rebuilds one module. Evaluation reads
       `builtins.outputOf`, and the builds need the Nix of `nix` below.
 
       The modules hold the ways of one `Setup build`, so a package that
@@ -30,6 +38,12 @@ with (import ../../libs/prelude { inherit lib; });
         enable = mkOption {
           type = types.bool;
           default = false;
+          # The warning rides on the read of an enabled value, so every
+          # driver that consults the option states it.
+          apply = enabled:
+            if enabled
+            then warn fineGrainedExperimental enabled
+            else enabled;
           description = ''
             Whether to build the packages `packages` names module by
             module. Off leaves the drivers' own build paths in place.

@@ -386,7 +386,8 @@ option, a field set under `nixpkgs.fine-grained` or
 platforms are never built this way: a plan runs the Setup of the build
 platform, and its modules compile where the build runs.
 
-The feature is off by default, because it needs more than a stock Nix:
+The feature is experimental, and off by default, because it needs more
+than a stock Nix:
 
 - Evaluation reads `builtins.outputOf`, so the evaluator needs the
   `dynamic-derivations` experimental feature.
