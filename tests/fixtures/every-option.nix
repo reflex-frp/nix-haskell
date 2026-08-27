@@ -51,6 +51,7 @@
       enableSeparateDataOutput = false;
       enableLibraryForGhci = false;
       hardeningDisable = [ "format" ];
+      previousIntermediates = "/var/empty";
       preUnpack = "echo every-option pre-unpack";
       postUnpack = "echo every-option post-unpack";
       prePatch = "echo every-option pre-patch";
@@ -124,7 +125,7 @@
 
   # A selection that names no package. The fixture then holds these options
   # without a Nix that carries dynamic derivations.
-  nixpkgs.options.fine-grained = {
+  fine-grained = {
     enable = true;
     packages = [];
   };

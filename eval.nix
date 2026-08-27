@@ -16,6 +16,9 @@ let systemDefault = {
       _module.args.system = pkgs.lib.mkDefault config.system;
       _module.args.pkgs = pkgs.lib.mkDefault
         (import config.inputs.nixpkgs { inherit (config) system; });
+      # The project's own config, which a driver mirror replaces with the
+      # enclosing project when it re-imports modules/common for itself.
+      _module.args.topConfig = pkgs.lib.mkDefault config;
     };
 
     inputDefaults = { lib, ... }: {

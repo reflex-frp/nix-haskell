@@ -4,8 +4,8 @@
 # it, and as a person would inside the project's shell.
 #
 # A stock Nix builds every attribute here. The fine-grained example's
-# library needs one carrying dynamic derivations, so it appears only there,
-# and `fine-grained.run` builds it on any other machine.
+# libraries need one carrying dynamic derivations, so they appear only
+# there, and `fine-grained.run` builds them on any other machine.
 #
 #   nix-build release.nix -A all
 #   nix-build release.nix -A checks
@@ -43,13 +43,16 @@ let pkgs = (import ./default.nix { inherit system inputs; } {}).pkgs;
         inherit system inputs;
       };
 
-      # The tool and the wrapper build anywhere. The library reads
-      # `builtins.outputOf`, so it joins them only where the Nix reading this
-      # carries dynamic derivations, and the wrapper builds it anywhere else.
+      # The tool and the wrapper build anywhere. The libraries read
+      # `builtins.outputOf`, so they join them only where the Nix reading
+      # this carries dynamic derivations, and the wrapper builds them
+      # anywhere else.
       fine-grained =
         let example = import ./examples/fine-grained { inherit system inputs; };
         in { inherit (example) nix run; }
-           // lib.optionalAttrs (builtins ? outputOf) { inherit (example) library; };
+           // lib.optionalAttrs (builtins ? outputOf) {
+             inherit (example) library-nixpkgs library-haskell-nix;
+           };
 
     };
 

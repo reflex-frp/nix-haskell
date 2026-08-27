@@ -18,6 +18,24 @@ with (import ../../libs/prelude { inherit lib; });
           '';
           example = fenced-code ''./vendored/my-dep'';
         };
+        previousIntermediates = mkOption {
+          type = types.nullOr (types.either types.str types.package);
+          default = null;
+          description = ''
+            Compiled modules of an earlier build to resume from: a path
+            carrying `share/haskell/<ghc-version>/<pname>-<version>/dist/build`,
+            which the build restores before `Setup build`. Modules ghc
+            accepts are not compiled again. `fine-grained` sets this to a
+            plan's output for the packages it selects, over a value set
+            here.
+
+            The nixpkgs driver builds a package as one derivation and
+            restores the whole tree. The haskell.nix driver builds per
+            component and restores the library's, the only component
+            whose build the tree holds.
+          '';
+          example = fenced-code ''builtins.outputOf plan.outPath "out"'';
+        };
         components = mkOption {
           type = types.submodule {
             options.exes = mkOption {

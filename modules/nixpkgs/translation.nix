@@ -48,7 +48,18 @@ in {
 
       ghcOptions.via = "`--ghc-option` configure flags on the project's packages";
 
+      "fine-grained.enable".via = "selected native packages get a sandstone plan each, in the last overlay of the set, and their builds resume from it";
+      "fine-grained.packages".via = "the selection that overlay covers; `null` is every discovered non-external package";
+      "fine-grained.sandstone".via = "the checkout `tool` and `nix` default to";
+      "fine-grained.tool".via = "`cabal-dyn-drv`, which every plan hands over to";
+      "fine-grained.nix".via = "consumed by no build; the Nix a user runs these builds with";
+      "fine-grained.ghc-shim".via = "applied to this driver's ghc; the compiler a plan's configure records";
+      "fine-grained.configure-flags".via = "each plan's configure flags, computed from the package's `packages.<name>` fields";
+      "fine-grained.intermediates".via = "each plan derivation, whose output feeds mkDerivation `previousIntermediates`";
+
       "packages.*.src".via = "haskell.lib overrideSrc";
+
+      "packages.*.previousIntermediates".via = "mkDerivation `previousIntermediates`; a fine-grained plan replaces it for the packages it selects";
 
       "shell.packages".via = "shellFor `packages`, selecting from the project's packages and source-repository-packages";
       "shell.tools".via = "resolved by name in `pkgs` and the Haskell package set (version requests are ignored; see `nixpkgs.options.tool-packages`)";

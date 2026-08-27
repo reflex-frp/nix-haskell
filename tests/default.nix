@@ -15,9 +15,10 @@
 #   package-arguments-spec      a raw mkDerivation argument set through
 #                               nixpkgs.options.package-arguments lands on
 #                               the package derivation (pure eval)
-#   fine-grained-spec           a plan's configure flags follow the package's
-#                               own fields, and a selection that names no
-#                               package changes no derivation (pure eval)
+#   fine-grained-spec           both drivers' plan configure flags follow the
+#                               package's own fields, and a selection that
+#                               names no package changes no derivation on
+#                               either driver (evaluates the hello plan)
 #   cross-target-row-spec       a user-supplied cross-target row is a full
 #                               target: options, registry, node opt-out,
 #                               and settings tolerance (pure eval)
@@ -420,11 +421,13 @@ let eval = import ../eval.nix { inherit system pkgs inputs; };
     # fine-grained-spec
     # ------------------------------------------------------------------------
 
-    # A plan's configure flags follow the package's own fields, and a field
-    # the project leaves unset falls back to the nixpkgs default. A selection
-    # that names no package leaves the driver's build path alone. Nothing
-    # here reads `builtins.outputOf`, which needs a Nix that carries dynamic
-    # derivations.
+    # A plan's configure flags follow the package's own fields on both
+    # drivers, and a field the project leaves unset falls back to the
+    # driver's default. A selection that names no package leaves both
+    # drivers' build paths alone; the haskell.nix half of that check
+    # evaluates the hello plan, which `hello-haskell-nix` builds anyway.
+    # Nothing here reads `builtins.outputOf`, which needs a Nix that
+    # carries dynamic derivations.
     fine-grained-spec =
       let flagsFor = tweaks:
             import ../libs/nixpkgs/fine-grained/configure-flags.nix { inherit (pkgs) lib; } {
@@ -444,11 +447,40 @@ let eval = import ../eval.nix { inherit system pkgs inputs; };
 
           fallback = flagsFor quiet;
 
-          selected = selection:
-            (eval [
+          # The haskell.nix step takes the library component's own config,
+          # so the stub carries every field it reads.
+          component = {
+            dontStrip = true;
+            enableLibraryProfiling = false;
+            enableProfiling = false;
+            enableStatic = true;
+            enableShared = true;
+            enableExecutableDynamic = false;
+            doCoverage = false;
+            enableLibraryForGhci = true;
+            enableDeadCodeElimination = false;
+            profilingDetail = "default";
+            configureFlags = [ "--extra-flag" ];
+            ghcOptions = [ "-Wall" ];
+          };
+
+          statedHaskellNix =
+            import ../libs/haskell-nix/fine-grained/configure-flags.nix { inherit (pkgs) lib; } {
+              name = "hello";
+              inherit component pkgs;
+              ghc = pkgs.haskellPackages.ghc;
+            };
+
+          selected = driver: read: selection:
+            read (eval [
               (import ../examples/hello/project.nix)
-              { nixpkgs.options.fine-grained = selection; }
-            ]).config.nixpkgs.project.packages.hello.drvPath;
+              { fine-grained = selection; }
+            ]).config.${driver};
+
+          nixpkgsDrv = selected "nixpkgs" (c: c.project.packages.hello.drvPath);
+
+          haskellNixDrv = selected "haskell-nix"
+            (c: c.project.hsPkgs.hello.components.exes.hello.drvPath);
 
           expected = {
             "profiling stated off" = hasInfix "--disable-library-profiling" stated;
@@ -456,9 +488,16 @@ let eval = import ../eval.nix { inherit system pkgs inputs; };
             "dead code stated off" = hasInfix "--disable-split-sections" stated;
             "ghc options carried" = hasInfix "--ghc-option=-Wall" stated;
             "dead code falls back" = hasInfix "--enable-split-sections" fallback;
+            "haskell.nix target stated" = hasPrefix "lib:hello" statedHaskellNix;
+            "haskell.nix dead code stated off" = hasInfix "--disable-split-sections" statedHaskellNix;
+            "haskell.nix ghc options carried" = hasInfix "--ghc-option=-Wall" statedHaskellNix;
+            "haskell.nix configure flags carried" = hasInfix "--extra-flag" statedHaskellNix;
             "empty selection changes nothing" =
-              selected { enable = true; packages = []; }
-              == selected { enable = false; };
+              nixpkgsDrv { enable = true; packages = []; }
+              == nixpkgsDrv { enable = false; };
+            "empty selection changes nothing on haskell.nix" =
+              haskellNixDrv { enable = true; packages = []; }
+              == haskellNixDrv { enable = false; };
           };
 
           failed = attrNames (filterAttrs (_: holds: ! holds) expected);

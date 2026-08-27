@@ -273,8 +273,6 @@ null
 
 ## packages\.\<name>\.closure-compiler\.externs
 
-
-
 Files passed as ` --externs `\. They declare what the program reaches by
 a name the compiler must not rename\. The jsexe’s own ` all.externs.js `
 always goes ahead of these, since ADVANCED renames everything it is
@@ -309,6 +307,8 @@ null
 
 
 ## packages\.\<name>\.closure-compiler\.extraFlags
+
+
 
 Flags appended after the level and the externs, so one of these
 overrides what they set\. Write one flag per element, with its value in
@@ -1532,6 +1532,48 @@ null
 
 ```nix
 "export HOME=$TMPDIR"
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/common](file://<nix-haskell>/modules/common)
+
+
+
+## packages\.\<name>\.previousIntermediates
+
+
+
+Compiled modules of an earlier build to resume from: a path
+carrying ` share/haskell/<ghc-version>/<pname>-<version>/dist/build `,
+which the build restores before ` Setup build `\. Modules ghc
+accepts are not compiled again\. ` fine-grained ` sets this to a
+plan’s output for the packages it selects, over a value set
+here\.
+
+The nixpkgs driver builds a package as one derivation and
+restores the whole tree\. The haskell\.nix driver builds per
+component and restores the library’s, the only component
+whose build the tree holds\.
+
+
+
+*Type:*
+null or string or package
+
+
+
+*Default:*
+
+```nix
+null
+```
+
+
+
+*Example:*
+
+```
+builtins.outputOf plan.outPath "out"
 ```
 
 *Declared by:*
@@ -3545,6 +3587,324 @@ list of strings concatenated with “\\n”
 
 
 
+## fine-grained
+
+
+
+Experimental: builds the selected packages one module at a time, so
+that a change to one module rebuilds one module\. Evaluation reads
+` builtins.outputOf `, and the builds need the Nix of ` nix ` below\.
+
+The modules hold the ways of one ` Setup build `, so a package that
+keeps ` packages.<name>.enableLibraryProfiling ` on compiles every
+module a second time\. The drivers warn when that happens\.
+
+
+
+*Type:*
+submodule
+
+
+
+*Default:*
+
+```nix
+{ }
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/common](file://<nix-haskell>/modules/common)
+
+
+
+## fine-grained\.enable
+
+
+
+Whether to build the packages ` packages ` names module by
+module\. Off leaves the drivers’ own build paths in place\.
+
+
+
+*Type:*
+boolean
+
+
+
+*Default:*
+
+```nix
+false
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/common](file://<nix-haskell>/modules/common)
+
+
+
+## fine-grained\.packages
+
+
+
+The packages built module by module, by cabal package name\.
+` null ` takes every local package, and ` [] ` takes none\. Cross
+platforms are never built this way\.
+
+
+
+*Type:*
+null or (list of string)
+
+
+
+*Default:*
+every local package
+
+
+
+*Example:*
+
+```nix
+[
+  "frontend"
+  "common"
+]
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/common](file://<nix-haskell>/modules/common)
+
+
+
+## fine-grained\.configure-flags
+
+
+
+**A function, not a setting\.** A project calls it and uses the
+result\. Assign it only to replace what the call does\.
+
+The configure flags of one package’s plan, one step per
+driver\. The nixpkgs call carries ` name `, ` tweaks `,
+` ghc-options `, ` ghc ` and ` pkgs `\. The haskell\.nix call carries
+` name `, ` component `, ` ghc ` and ` pkgs `\.
+
+The flags must make configure compute the ghc flags that the
+package’s own configure computes\. A mismatch costs
+recompilation\. Replace this step where something the default
+cannot read changes a build way, such as the nixpkgs driver’s
+` package-arguments ` or ` overrides `\.
+
+
+
+*Type:*
+function that evaluates to a(n) string
+
+
+
+*Default:*
+
+```
+<nix-haskell>/libs/nixpkgs/fine-grained/configure-flags.nix
+<nix-haskell>/libs/haskell-nix/fine-grained/configure-flags.nix
+```
+
+
+
+*Example:*
+
+```
+args: import "${nix-haskell-libs}/nixpkgs/fine-grained/configure-flags.nix" { inherit lib; } args
+  + " --ghc-option=-fno-ignore-asserts"
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/common](file://<nix-haskell>/modules/common)
+
+
+
+## fine-grained\.ghc-shim
+
+
+
+**A function, not a setting\.** A project calls it and uses the
+result\. Assign it only to replace what the call does\.
+
+The compiler that a plan’s configure records, so that
+sandstone reads the flags Cabal computed\. The call carries
+` pkgs ` and ` ghc `, and each driver passes its own compiler\.
+
+
+
+*Type:*
+function that evaluates to a(n) package
+
+
+
+*Default:*
+
+```
+<nix-haskell>/libs/fine-grained/ghc-shim.nix
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/common](file://<nix-haskell>/modules/common)
+
+
+
+## fine-grained\.intermediates
+
+
+
+**A function, not a setting\.** A project calls it and uses the
+result\. Assign it only to replace what the call does\.
+
+Builds one package’s plan, the derivation whose output is the
+derivation that assembles that package’s modules\. One step
+per driver\. The nixpkgs call carries ` name `, ` package `,
+` dependencies `, ` ghc `, ` shim `, ` tool `, ` configure-flags ` and
+` pkgs `\. The haskell\.nix call carries ` name `, ` version `,
+` src `, ` subdir `, ` setup `, ` config-files `, ` build-flags `,
+` ghc `, ` shim `, ` tool `, ` configure-flags ` and ` pkgs `\.
+
+
+
+*Type:*
+function that evaluates to a(n) raw value
+
+
+
+*Default:*
+
+```
+<nix-haskell>/libs/nixpkgs/fine-grained/intermediates.nix
+<nix-haskell>/libs/haskell-nix/fine-grained/intermediates.nix
+```
+
+
+
+*Example:*
+
+```
+args: import "${nix-haskell-libs}/nixpkgs/fine-grained/intermediates.nix" { inherit lib; }
+  (args // { configure-flags = args.configure-flags + " --enable-tests"; })
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/common](file://<nix-haskell>/modules/common)
+
+
+
+## fine-grained\.nix
+
+
+
+The Nix that these builds need, with dynamic derivations and
+the ` builder-rpc-v0 ` system feature\. Build it and run it as
+the daemon, or drive a store of its own with it\.
+
+
+
+*Type:*
+package
+
+
+
+*Default:*
+
+```
+<sandstone>.nix
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/common](file://<nix-haskell>/modules/common)
+
+
+
+## fine-grained\.run
+
+
+
+` bin/fine-grained-nix `: the Nix of ` nix ` above, driving a
+store of its own with the features on, for a machine whose
+daemon carries none of them\. The machine’s store fills that
+one by copy\. ` NIX_DYNAMIC_DRV_STORE ` names the store, and
+unset it is ` .nix/store ` under the nearest project root\.
+
+
+
+*Type:*
+package
+
+
+
+*Default:*
+
+```
+<nix-haskell>/libs/fine-grained/run.nix
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/common](file://<nix-haskell>/modules/common)
+
+
+
+## fine-grained\.sandstone
+
+
+
+The sandstone checkout, read with the nixpkgs and the Nix
+overlay that it pins itself\. Those are not a driver’s, and
+these builds use only the tool that it carries\.
+
+
+
+*Type:*
+raw value
+
+
+
+*Default:*
+
+```
+import config.inputs.sandstone {
+  nixpkgsArgs = {
+    localSystem = {
+      system = config.system;
+    };
+  };
+}
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/common](file://<nix-haskell>/modules/common)
+
+
+
+## fine-grained\.tool
+
+
+
+The package that carries ` bin/cabal-dyn-drv `, which builds
+every plan\.
+
+
+
+*Type:*
+package
+
+
+
+*Default:*
+
+```
+<sandstone>.haskellPackages.sandstone
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/common](file://<nix-haskell>/modules/common)
+
+
+
 ## ghcOptions
 
 
@@ -4621,8 +4981,6 @@ false
 
 ## haskell-nix\.options\.index-sha256
 
-
-
 The hash of the truncated hackage index-state
 
 
@@ -4868,6 +5226,8 @@ list of package
 
 
 ## haskell-nix\.options\.projectFileName
+
+
 
 This option has no description\.
 
@@ -5540,10 +5900,18 @@ list of unspecified value
 
 
 The built project as haskell\.nix returns it: ` hsPkgs `, ` shell `,
-` projectCross ` per cross platform, ` plan-nix `, and the rest\. The
-shell is haskell\.nix’s own, with the common ` shell.shellHook `
+` projectCross ` per cross platform, ` plan-nix `, and the rest\. A
+replacement value must be a haskell\.nix project too: it answers
+` appendModule `, ` shell ` and ` pkg-set `\.
+
+The shell is haskell\.nix’s own, with the common ` shell.shellHook `
 appended and ` shell.withHoogle ` applied\. Both go through
 ` overrideAttrs `, so neither is evaluated unless the shell is\.
+
+With ` fine-grained ` on and selecting a package, the project is
+re-evaluated with a module restoring each selected library from
+its plan\. The plans read the project as set here, whose
+components differ from the final ones only by that restore\.
 
 
 
@@ -6900,286 +7268,6 @@ function that evaluates to a(n) raw value
 ```
 { stanza, inputMap, pkgs }:
   inputMap.${stanza.url} or (throw "unpinned source-repository-package: ${stanza.url}")
-```
-
-*Declared by:*
- - [<nix-haskell>/modules/nixpkgs](file://<nix-haskell>/modules/nixpkgs)
-
-
-
-## nixpkgs\.options\.fine-grained
-
-
-
-Builds the selected packages one module at a time, so that a change
-to one module rebuilds one module\. Evaluation reads
-` builtins.outputOf `, and the builds need the Nix of ` nix ` below\.
-
-The modules hold the ways of one ` Setup build `, so a package that
-keeps ` packages.<name>.enableLibraryProfiling ` on compiles every
-module a second time\. The driver warns when that happens\.
-
-
-
-*Type:*
-submodule
-
-
-
-*Default:*
-
-```nix
-{ }
-```
-
-*Declared by:*
- - [<nix-haskell>/modules/nixpkgs](file://<nix-haskell>/modules/nixpkgs)
-
-
-
-## nixpkgs\.options\.fine-grained\.enable
-
-
-
-Whether to build the packages ` packages ` names module by
-module\. Off leaves the driver’s own build path in place\.
-
-
-
-*Type:*
-boolean
-
-
-
-*Default:*
-
-```nix
-false
-```
-
-*Declared by:*
- - [<nix-haskell>/modules/nixpkgs](file://<nix-haskell>/modules/nixpkgs)
-
-
-
-## nixpkgs\.options\.fine-grained\.packages
-
-
-
-The packages built module by module, by cabal package name\.
-` null ` takes every local package, and ` [] ` takes none\. Cross
-platforms are never built this way\.
-
-
-
-*Type:*
-null or (list of string)
-
-
-
-*Default:*
-every local package
-
-
-
-*Example:*
-
-```nix
-[
-  "frontend"
-  "common"
-]
-```
-
-*Declared by:*
- - [<nix-haskell>/modules/nixpkgs](file://<nix-haskell>/modules/nixpkgs)
-
-
-
-## nixpkgs\.options\.fine-grained\.configure-flags
-
-
-
-**A function, not a setting\.** A project calls it and uses the
-result\. Assign it only to replace what the call does\.
-
-The configure flags of one package’s plan\. The call carries
-` name `, ` tweaks `, ` ghc-options `, ` ghc ` and ` pkgs `\.
-
-The flags must make configure compute the ghc flags that the
-package’s own configure computes\. A mismatch costs
-recompilation\. Replace this step where ` package-arguments `
-or ` overrides ` changes a build way, which the default cannot
-read\.
-
-
-
-*Type:*
-function that evaluates to a(n) string
-
-
-
-*Default:*
-
-```
-<nix-haskell>/libs/nixpkgs/fine-grained/configure-flags.nix
-```
-
-
-
-*Example:*
-
-```
-args: import "${nix-haskell-libs}/nixpkgs/fine-grained/configure-flags.nix" { inherit lib; } args
-  + " --ghc-option=-fno-ignore-asserts"
-```
-
-*Declared by:*
- - [<nix-haskell>/modules/nixpkgs](file://<nix-haskell>/modules/nixpkgs)
-
-
-
-## nixpkgs\.options\.fine-grained\.ghc-shim
-
-
-
-The compiler that a plan’s configure records, so that
-sandstone reads the flags Cabal computed\. It wraps this
-driver’s ghc\.
-
-
-
-*Type:*
-package
-
-
-
-*Default:*
-
-```
-<nix-haskell>/libs/nixpkgs/fine-grained/ghc-shim.nix
-```
-
-*Declared by:*
- - [<nix-haskell>/modules/nixpkgs](file://<nix-haskell>/modules/nixpkgs)
-
-
-
-## nixpkgs\.options\.fine-grained\.intermediates
-
-
-
-**A function, not a setting\.** A project calls it and uses the
-result\. Assign it only to replace what the call does\.
-
-Builds one package’s plan, the derivation whose output is the
-derivation that assembles that package’s modules\. The call
-carries ` name `, ` package `, ` dependencies `, ` ghc `, ` shim `,
-` tool `, ` configure-flags ` and ` pkgs `\.
-
-
-
-*Type:*
-function that evaluates to a(n) raw value
-
-
-
-*Default:*
-
-```
-<nix-haskell>/libs/nixpkgs/fine-grained/intermediates.nix
-```
-
-
-
-*Example:*
-
-```
-args: import "${nix-haskell-libs}/nixpkgs/fine-grained/intermediates.nix" { inherit lib; }
-  (args // { configure-flags = args.configure-flags + " --enable-tests"; })
-```
-
-*Declared by:*
- - [<nix-haskell>/modules/nixpkgs](file://<nix-haskell>/modules/nixpkgs)
-
-
-
-## nixpkgs\.options\.fine-grained\.nix
-
-
-
-The Nix that these builds need, with dynamic derivations and
-the ` builder-rpc-v0 ` system feature\. Build it and run it as
-the daemon, or drive a store of its own with it\.
-
-
-
-*Type:*
-package
-
-
-
-*Default:*
-
-```
-<sandstone>.nix
-```
-
-*Declared by:*
- - [<nix-haskell>/modules/nixpkgs](file://<nix-haskell>/modules/nixpkgs)
-
-
-
-## nixpkgs\.options\.fine-grained\.sandstone
-
-
-
-The sandstone checkout, read with the nixpkgs and the Nix
-overlay that it pins itself\. Those are not this driver’s, and
-these builds use only the tool that it carries\.
-
-
-
-*Type:*
-raw value
-
-
-
-*Default:*
-
-```
-import config.inputs.sandstone {
-  nixpkgsArgs = {
-    localSystem = {
-      system = config.nixpkgs.system;
-    };
-  };
-}
-```
-
-*Declared by:*
- - [<nix-haskell>/modules/nixpkgs](file://<nix-haskell>/modules/nixpkgs)
-
-
-
-## nixpkgs\.options\.fine-grained\.tool
-
-
-
-The package that carries ` bin/cabal-dyn-drv `, which builds
-every plan\.
-
-
-
-*Type:*
-package
-
-
-
-*Default:*
-
-```
-<sandstone>.haskellPackages.sandstone
 ```
 
 *Declared by:*
@@ -9128,8 +9216,6 @@ list of absolute path
 
 ## platforms\.\<name>\.packages\.\<name>\.postBuild
 
-
-
 Shell code run after the
 build phase\. ` null ` leaves the default in
 place\.
@@ -9195,6 +9281,8 @@ null
 
 
 ## platforms\.\<name>\.packages\.\<name>\.postConfigure
+
+
 
 Shell code run after the
 configure phase\. ` null ` leaves the default in
@@ -9593,6 +9681,48 @@ null
 
 ```nix
 "export HOME=$TMPDIR"
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/common](file://<nix-haskell>/modules/common)
+
+
+
+## platforms\.\<name>\.packages\.\<name>\.previousIntermediates
+
+
+
+Compiled modules of an earlier build to resume from: a path
+carrying ` share/haskell/<ghc-version>/<pname>-<version>/dist/build `,
+which the build restores before ` Setup build `\. Modules ghc
+accepts are not compiled again\. ` fine-grained ` sets this to a
+plan’s output for the packages it selects, over a value set
+here\.
+
+The nixpkgs driver builds a package as one derivation and
+restores the whole tree\. The haskell\.nix driver builds per
+component and restores the library’s, the only component
+whose build the tree holds\.
+
+
+
+*Type:*
+null or string or package
+
+
+
+*Default:*
+
+```nix
+null
+```
+
+
+
+*Example:*
+
+```
+builtins.outputOf plan.outPath "out"
 ```
 
 *Declared by:*

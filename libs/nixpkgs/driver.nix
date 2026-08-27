@@ -256,7 +256,12 @@ let compose = pkgs.haskell.lib.compose;
     # Fine-grained builds
     # ------------------------------------------------------------------------
 
-    fineGrained = options.fine-grained;
+    fineGrained = common.fine-grained;
+
+    fineGrainedShim = fineGrained.ghc-shim {
+      inherit pkgs;
+      ghc = haskellPackages.ghc;
+    };
 
     # Native packages only. A plan builds Setup with the compiler it
     # configures with, and a cross set's Setup cannot run on the builder.
@@ -284,7 +289,7 @@ let compose = pkgs.haskell.lib.compose;
                   inherit name package pkgs;
                   ghc = haskellPackages.ghc;
                   dependencies = haskellDependencies package;
-                  shim = fineGrained.ghc-shim;
+                  shim = fineGrainedShim;
                   tool = fineGrained.tool;
                   configure-flags = flags;
                 };

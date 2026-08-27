@@ -1072,6 +1072,37 @@ null
 .UR file://%3Cnix-haskell%3E/modules/common
 /modules/common
 .UE \c
+.SS packages.<name>.previousIntermediates
+Compiled modules of an earlier build to resume from: a path carrying
+\f[CR]share/haskell/<ghc\-version>/<pname>\-<version>/dist/build\f[R],
+which the build restores before \f[CR]Setup build\f[R].
+Modules ghc accepts are not compiled again.
+\f[CR]fine\-grained\f[R] sets this to a plan\(cqs output for the
+packages it selects, over a value set here.
+.PP
+The nixpkgs driver builds a package as one derivation and restores the
+whole tree.
+The haskell.nix driver builds per component and restores the
+library\(cqs, the only component whose build the tree holds.
+.PP
+\f[I]Type:\f[R] null or string or package
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+null
+.EE
+.PP
+\f[I]Example:\f[R]
+.IP
+.EX
+builtins.outputOf plan.outPath \(dqout\(dq
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/common
+/modules/common
+.UE \c
 .SS packages.<name>.profilingDetail
 The profiling detail level.
 \f[CR]null\f[R] leaves the default in place.
@@ -2526,6 +2557,242 @@ Lines to append to \f[CR]cabal.project\f[R].
 .UR file://%3Cnix-haskell%3E/modules/common
 /modules/common
 .UE \c
+.SS fine\-grained
+Experimental: builds the selected packages one module at a time, so that
+a change to one module rebuilds one module.
+Evaluation reads \f[CR]builtins.outputOf\f[R], and the builds need the
+Nix of \f[CR]nix\f[R] below.
+.PP
+The modules hold the ways of one \f[CR]Setup build\f[R], so a package
+that keeps \f[CR]packages.<name>.enableLibraryProfiling\f[R] on compiles
+every module a second time.
+The drivers warn when that happens.
+.PP
+\f[I]Type:\f[R] submodule
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+{ }
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/common
+/modules/common
+.UE \c
+.SS fine\-grained.enable
+Whether to build the packages \f[CR]packages\f[R] names module by
+module.
+Off leaves the drivers\(cq own build paths in place.
+.PP
+\f[I]Type:\f[R] boolean
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+false
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/common
+/modules/common
+.UE \c
+.SS fine\-grained.packages
+The packages built module by module, by cabal package name.
+\f[CR]null\f[R] takes every local package, and \f[CR][]\f[R] takes none.
+Cross platforms are never built this way.
+.PP
+\f[I]Type:\f[R] null or (list of string)
+.PP
+\f[I]Default:\f[R] every local package
+.PP
+\f[I]Example:\f[R]
+.IP
+.EX
+[
+  \(dqfrontend\(dq
+  \(dqcommon\(dq
+]
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/common
+/modules/common
+.UE \c
+.SS fine\-grained.configure\-flags
+\f[B]A function, not a setting.\f[R] A project calls it and uses the
+result.
+Assign it only to replace what the call does.
+.PP
+The configure flags of one package\(cqs plan, one step per driver.
+The nixpkgs call carries \f[CR]name\f[R], \f[CR]tweaks\f[R],
+\f[CR]ghc\-options\f[R], \f[CR]ghc\f[R] and \f[CR]pkgs\f[R].
+The haskell.nix call carries \f[CR]name\f[R], \f[CR]component\f[R],
+\f[CR]ghc\f[R] and \f[CR]pkgs\f[R].
+.PP
+The flags must make configure compute the ghc flags that the
+package\(cqs own configure computes.
+A mismatch costs recompilation.
+Replace this step where something the default cannot read changes a
+build way, such as the nixpkgs driver\(cqs \f[CR]package\-arguments\f[R]
+or \f[CR]overrides\f[R].
+.PP
+\f[I]Type:\f[R] function that evaluates to a(n) string
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+<nix\-haskell>/libs/nixpkgs/fine\-grained/configure\-flags.nix
+<nix\-haskell>/libs/haskell\-nix/fine\-grained/configure\-flags.nix
+.EE
+.PP
+\f[I]Example:\f[R]
+.IP
+.EX
+args: import \(dq${nix\-haskell\-libs}/nixpkgs/fine\-grained/configure\-flags.nix\(dq { inherit lib; } args
+  + \(dq \-\-ghc\-option=\-fno\-ignore\-asserts\(dq
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/common
+/modules/common
+.UE \c
+.SS fine\-grained.ghc\-shim
+\f[B]A function, not a setting.\f[R] A project calls it and uses the
+result.
+Assign it only to replace what the call does.
+.PP
+The compiler that a plan\(cqs configure records, so that sandstone reads
+the flags Cabal computed.
+The call carries \f[CR]pkgs\f[R] and \f[CR]ghc\f[R], and each driver
+passes its own compiler.
+.PP
+\f[I]Type:\f[R] function that evaluates to a(n) package
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+<nix\-haskell>/libs/fine\-grained/ghc\-shim.nix
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/common
+/modules/common
+.UE \c
+.SS fine\-grained.intermediates
+\f[B]A function, not a setting.\f[R] A project calls it and uses the
+result.
+Assign it only to replace what the call does.
+.PP
+Builds one package\(cqs plan, the derivation whose output is the
+derivation that assembles that package\(cqs modules.
+One step per driver.
+The nixpkgs call carries \f[CR]name\f[R], \f[CR]package\f[R],
+\f[CR]dependencies\f[R], \f[CR]ghc\f[R], \f[CR]shim\f[R],
+\f[CR]tool\f[R], \f[CR]configure\-flags\f[R] and \f[CR]pkgs\f[R].
+The haskell.nix call carries \f[CR]name\f[R], \f[CR]version\f[R],
+\f[CR]src\f[R], \f[CR]subdir\f[R], \f[CR]setup\f[R],
+\f[CR]config\-files\f[R], \f[CR]build\-flags\f[R], \f[CR]ghc\f[R],
+\f[CR]shim\f[R], \f[CR]tool\f[R], \f[CR]configure\-flags\f[R] and
+\f[CR]pkgs\f[R].
+.PP
+\f[I]Type:\f[R] function that evaluates to a(n) raw value
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+<nix\-haskell>/libs/nixpkgs/fine\-grained/intermediates.nix
+<nix\-haskell>/libs/haskell\-nix/fine\-grained/intermediates.nix
+.EE
+.PP
+\f[I]Example:\f[R]
+.IP
+.EX
+args: import \(dq${nix\-haskell\-libs}/nixpkgs/fine\-grained/intermediates.nix\(dq { inherit lib; }
+  (args // { configure\-flags = args.configure\-flags + \(dq \-\-enable\-tests\(dq; })
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/common
+/modules/common
+.UE \c
+.SS fine\-grained.nix
+The Nix that these builds need, with dynamic derivations and the
+\f[CR]builder\-rpc\-v0\f[R] system feature.
+Build it and run it as the daemon, or drive a store of its own with it.
+.PP
+\f[I]Type:\f[R] package
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+<sandstone>.nix
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/common
+/modules/common
+.UE \c
+.SS fine\-grained.run
+\f[CR]bin/fine\-grained\-nix\f[R]: the Nix of \f[CR]nix\f[R] above,
+driving a store of its own with the features on, for a machine whose
+daemon carries none of them.
+The machine\(cqs store fills that one by copy.
+\f[CR]NIX_DYNAMIC_DRV_STORE\f[R] names the store, and unset it is
+\f[CR].nix/store\f[R] under the nearest project root.
+.PP
+\f[I]Type:\f[R] package
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+<nix\-haskell>/libs/fine\-grained/run.nix
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/common
+/modules/common
+.UE \c
+.SS fine\-grained.sandstone
+The sandstone checkout, read with the nixpkgs and the Nix overlay that
+it pins itself.
+Those are not a driver\(cqs, and these builds use only the tool that it
+carries.
+.PP
+\f[I]Type:\f[R] raw value
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+import config.inputs.sandstone {
+  nixpkgsArgs = {
+    localSystem = {
+      system = config.system;
+    };
+  };
+}
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/common
+/modules/common
+.UE \c
+.SS fine\-grained.tool
+The package that carries \f[CR]bin/cabal\-dyn\-drv\f[R], which builds
+every plan.
+.PP
+\f[I]Type:\f[R] package
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+<sandstone>.haskellPackages.sandstone
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/common
+/modules/common
+.UE \c
 .SS ghcOptions
 GHC flags applied project\-wide.
 .PP
@@ -3865,11 +4132,20 @@ Two definitions concatenate rather than replace one another.
 The built project as haskell.nix returns it: \f[CR]hsPkgs\f[R],
 \f[CR]shell\f[R], \f[CR]projectCross\f[R] per cross platform,
 \f[CR]plan\-nix\f[R], and the rest.
+A replacement value must be a haskell.nix project too: it answers
+\f[CR]appendModule\f[R], \f[CR]shell\f[R] and \f[CR]pkg\-set\f[R].
+.PP
 The shell is haskell.nix\(cqs own, with the common
 \f[CR]shell.shellHook\f[R] appended and \f[CR]shell.withHoogle\f[R]
 applied.
 Both go through \f[CR]overrideAttrs\f[R], so neither is evaluated unless
 the shell is.
+.PP
+With \f[CR]fine\-grained\f[R] on and selecting a package, the project is
+re\-evaluated with a module restoring each selected library from its
+plan.
+The plans read the project as set here, whose components differ from the
+final ones only by that restore.
 .PP
 \f[I]Type:\f[R] raw value
 .PP
@@ -4879,206 +5155,6 @@ Replace it to fetch through another tool or a mirror.
 .EX
 { stanza, inputMap, pkgs }:
   inputMap.${stanza.url} or (throw \(dqunpinned source\-repository\-package: ${stanza.url}\(dq)
-.EE
-.PP
-\f[I]Declared by:\f[R] \- \c
-.UR file://%3Cnix-haskell%3E/modules/nixpkgs
-/modules/nixpkgs
-.UE \c
-.SS nixpkgs.options.fine\-grained
-Builds the selected packages one module at a time, so that a change to
-one module rebuilds one module.
-Evaluation reads \f[CR]builtins.outputOf\f[R], and the builds need the
-Nix of \f[CR]nix\f[R] below.
-.PP
-The modules hold the ways of one \f[CR]Setup build\f[R], so a package
-that keeps \f[CR]packages.<name>.enableLibraryProfiling\f[R] on compiles
-every module a second time.
-The driver warns when that happens.
-.PP
-\f[I]Type:\f[R] submodule
-.PP
-\f[I]Default:\f[R]
-.IP
-.EX
-{ }
-.EE
-.PP
-\f[I]Declared by:\f[R] \- \c
-.UR file://%3Cnix-haskell%3E/modules/nixpkgs
-/modules/nixpkgs
-.UE \c
-.SS nixpkgs.options.fine\-grained.enable
-Whether to build the packages \f[CR]packages\f[R] names module by
-module.
-Off leaves the driver\(cqs own build path in place.
-.PP
-\f[I]Type:\f[R] boolean
-.PP
-\f[I]Default:\f[R]
-.IP
-.EX
-false
-.EE
-.PP
-\f[I]Declared by:\f[R] \- \c
-.UR file://%3Cnix-haskell%3E/modules/nixpkgs
-/modules/nixpkgs
-.UE \c
-.SS nixpkgs.options.fine\-grained.packages
-The packages built module by module, by cabal package name.
-\f[CR]null\f[R] takes every local package, and \f[CR][]\f[R] takes none.
-Cross platforms are never built this way.
-.PP
-\f[I]Type:\f[R] null or (list of string)
-.PP
-\f[I]Default:\f[R] every local package
-.PP
-\f[I]Example:\f[R]
-.IP
-.EX
-[
-  \(dqfrontend\(dq
-  \(dqcommon\(dq
-]
-.EE
-.PP
-\f[I]Declared by:\f[R] \- \c
-.UR file://%3Cnix-haskell%3E/modules/nixpkgs
-/modules/nixpkgs
-.UE \c
-.SS nixpkgs.options.fine\-grained.configure\-flags
-\f[B]A function, not a setting.\f[R] A project calls it and uses the
-result.
-Assign it only to replace what the call does.
-.PP
-The configure flags of one package\(cqs plan.
-The call carries \f[CR]name\f[R], \f[CR]tweaks\f[R],
-\f[CR]ghc\-options\f[R], \f[CR]ghc\f[R] and \f[CR]pkgs\f[R].
-.PP
-The flags must make configure compute the ghc flags that the
-package\(cqs own configure computes.
-A mismatch costs recompilation.
-Replace this step where \f[CR]package\-arguments\f[R] or
-\f[CR]overrides\f[R] changes a build way, which the default cannot read.
-.PP
-\f[I]Type:\f[R] function that evaluates to a(n) string
-.PP
-\f[I]Default:\f[R]
-.IP
-.EX
-<nix\-haskell>/libs/nixpkgs/fine\-grained/configure\-flags.nix
-.EE
-.PP
-\f[I]Example:\f[R]
-.IP
-.EX
-args: import \(dq${nix\-haskell\-libs}/nixpkgs/fine\-grained/configure\-flags.nix\(dq { inherit lib; } args
-  + \(dq \-\-ghc\-option=\-fno\-ignore\-asserts\(dq
-.EE
-.PP
-\f[I]Declared by:\f[R] \- \c
-.UR file://%3Cnix-haskell%3E/modules/nixpkgs
-/modules/nixpkgs
-.UE \c
-.SS nixpkgs.options.fine\-grained.ghc\-shim
-The compiler that a plan\(cqs configure records, so that sandstone reads
-the flags Cabal computed.
-It wraps this driver\(cqs ghc.
-.PP
-\f[I]Type:\f[R] package
-.PP
-\f[I]Default:\f[R]
-.IP
-.EX
-<nix\-haskell>/libs/nixpkgs/fine\-grained/ghc\-shim.nix
-.EE
-.PP
-\f[I]Declared by:\f[R] \- \c
-.UR file://%3Cnix-haskell%3E/modules/nixpkgs
-/modules/nixpkgs
-.UE \c
-.SS nixpkgs.options.fine\-grained.intermediates
-\f[B]A function, not a setting.\f[R] A project calls it and uses the
-result.
-Assign it only to replace what the call does.
-.PP
-Builds one package\(cqs plan, the derivation whose output is the
-derivation that assembles that package\(cqs modules.
-The call carries \f[CR]name\f[R], \f[CR]package\f[R],
-\f[CR]dependencies\f[R], \f[CR]ghc\f[R], \f[CR]shim\f[R],
-\f[CR]tool\f[R], \f[CR]configure\-flags\f[R] and \f[CR]pkgs\f[R].
-.PP
-\f[I]Type:\f[R] function that evaluates to a(n) raw value
-.PP
-\f[I]Default:\f[R]
-.IP
-.EX
-<nix\-haskell>/libs/nixpkgs/fine\-grained/intermediates.nix
-.EE
-.PP
-\f[I]Example:\f[R]
-.IP
-.EX
-args: import \(dq${nix\-haskell\-libs}/nixpkgs/fine\-grained/intermediates.nix\(dq { inherit lib; }
-  (args // { configure\-flags = args.configure\-flags + \(dq \-\-enable\-tests\(dq; })
-.EE
-.PP
-\f[I]Declared by:\f[R] \- \c
-.UR file://%3Cnix-haskell%3E/modules/nixpkgs
-/modules/nixpkgs
-.UE \c
-.SS nixpkgs.options.fine\-grained.nix
-The Nix that these builds need, with dynamic derivations and the
-\f[CR]builder\-rpc\-v0\f[R] system feature.
-Build it and run it as the daemon, or drive a store of its own with it.
-.PP
-\f[I]Type:\f[R] package
-.PP
-\f[I]Default:\f[R]
-.IP
-.EX
-<sandstone>.nix
-.EE
-.PP
-\f[I]Declared by:\f[R] \- \c
-.UR file://%3Cnix-haskell%3E/modules/nixpkgs
-/modules/nixpkgs
-.UE \c
-.SS nixpkgs.options.fine\-grained.sandstone
-The sandstone checkout, read with the nixpkgs and the Nix overlay that
-it pins itself.
-Those are not this driver\(cqs, and these builds use only the tool that
-it carries.
-.PP
-\f[I]Type:\f[R] raw value
-.PP
-\f[I]Default:\f[R]
-.IP
-.EX
-import config.inputs.sandstone {
-  nixpkgsArgs = {
-    localSystem = {
-      system = config.nixpkgs.system;
-    };
-  };
-}
-.EE
-.PP
-\f[I]Declared by:\f[R] \- \c
-.UR file://%3Cnix-haskell%3E/modules/nixpkgs
-/modules/nixpkgs
-.UE \c
-.SS nixpkgs.options.fine\-grained.tool
-The package that carries \f[CR]bin/cabal\-dyn\-drv\f[R], which builds
-every plan.
-.PP
-\f[I]Type:\f[R] package
-.PP
-\f[I]Default:\f[R]
-.IP
-.EX
-<sandstone>.haskellPackages.sandstone
 .EE
 .PP
 \f[I]Declared by:\f[R] \- \c
@@ -6796,6 +6872,37 @@ null
 .IP
 .EX
 \(dqexport HOME=$TMPDIR\(dq
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/common
+/modules/common
+.UE \c
+.SS platforms.<name>.packages.<name>.previousIntermediates
+Compiled modules of an earlier build to resume from: a path carrying
+\f[CR]share/haskell/<ghc\-version>/<pname>\-<version>/dist/build\f[R],
+which the build restores before \f[CR]Setup build\f[R].
+Modules ghc accepts are not compiled again.
+\f[CR]fine\-grained\f[R] sets this to a plan\(cqs output for the
+packages it selects, over a value set here.
+.PP
+The nixpkgs driver builds a package as one derivation and restores the
+whole tree.
+The haskell.nix driver builds per component and restores the
+library\(cqs, the only component whose build the tree holds.
+.PP
+\f[I]Type:\f[R] null or string or package
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+null
+.EE
+.PP
+\f[I]Example:\f[R]
+.IP
+.EX
+builtins.outputOf plan.outPath \(dqout\(dq
 .EE
 .PP
 \f[I]Declared by:\f[R] \- \c

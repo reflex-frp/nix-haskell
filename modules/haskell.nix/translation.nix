@@ -81,6 +81,28 @@ let translations = import ../../libs/driver/translation.nix { inherit lib; };
       via = "a `packages.<name>.${field}` module";
     }) packagesFieldNames);
 
+    # Not a verbatim field: haskell.nix has no such option. The library
+    # component's `preBuild` seeds `dist/build` before `Setup build`.
+    previousIntermediates =
+      let relevant = filterAttrs (_: tweaks: tweaks.previousIntermediates != null) cfg.packages;
+
+          restore-intermediates = import ../../libs/haskell-nix/restore-intermediates.nix { inherit lib; };
+
+      in mkIf (relevant != {}) {
+        modules = [
+          ({ config, ... }: {
+            packages = mapAttrs (name: tweaks: {
+              components.library.preBuild = restore-intermediates {
+                ghc = config.ghc.package;
+                pname = name;
+                user-hook = config.packages.${name}.preBuild;
+                intermediates = tweaks.previousIntermediates;
+              };
+            }) (filterAttrs (name: _: config.packages ? ${name}) relevant);
+          })
+        ];
+      };
+
     # The executables a project named, gathered from the project-wide entries
     # and from every target's, so one named for a single target is installed
     # too. Naming an executable that has no `.jsexe` costs nothing: the module
@@ -188,9 +210,23 @@ in {
       };
       ghcOptions.via = "a project-wide `ghcOptions` module";
 
+      "fine-grained.enable".via = "the project is re-evaluated in the `project` apply, with a module restoring each selected library from its plan; the plans read the project evaluated without it";
+      "fine-grained.packages".via = "the selection the restore module covers; `null` is every local library of the cabal plan";
+      "fine-grained.sandstone".via = "the checkout `tool` and `nix` default to";
+      "fine-grained.tool".via = "`cabal-dyn-drv`, which every plan hands over to";
+      "fine-grained.nix".via = "consumed by no build; the Nix a user runs these builds with";
+      "fine-grained.ghc-shim".via = "applied to the project's ghc; the compiler a plan's configure records";
+      "fine-grained.configure-flags".via = "each plan's configure flags, computed from the library component's own config";
+      "fine-grained.intermediates".via = "each plan derivation, whose output the library's `preBuild` restores";
+
       "packages.*.src" = {
         set = packagesField "src" (t: { src = mkForce t.src; });
         via = "a `packages.<name>.src` module";
+      };
+
+      "packages.*.previousIntermediates" = {
+        set = previousIntermediates;
+        via = "a `preBuild` restore on the package's library component; a fine-grained plan replaces it for the packages it selects";
       };
 
       "platforms.*.packages".set = mkIf (cfg.platforms != {}) {

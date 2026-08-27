@@ -91,20 +91,45 @@ in {
       };
 
       project = mkOption {
-        default =
-          let p = config.haskell-nix.haskell-nix.project config.haskell-nix.options;
-              shellWithHooks = p.shell.overrideAttrs (old: {
+        default = config.haskell-nix.haskell-nix.project config.haskell-nix.options;
+        # `apply` rather than the default, so an overridden project passes
+        # through the same wraps.
+        apply = p:
+          let fineGrained = import ../../libs/haskell-nix/fine-grained/driver.nix { inherit lib; } {
+                fine-grained = cfg.fine-grained;
+                project = p;
+                haskellLib = cfg.lib;
+                pkgs = cfg.nixpkgs;
+              };
+
+              # `appendModule` returns the project unflattened, so the
+              # package attributes are put back beside it.
+              wrapped =
+                if cfg.fine-grained.enable && fineGrained.names != []
+                then let q = p.appendModule { modules = [ fineGrained.module ]; };
+                     in q.hsPkgs // q
+                else p;
+
+              shellWithHooks = wrapped.shell.overrideAttrs (old: {
                 shellHook = old.shellHook + cfg.shell.shellHook;
                 withHoogle = old.withHoogle or cfg.shell.withHoogle;
               });
-          in p // { shell = shellWithHooks; };
+          in wrapped // { shell = shellWithHooks; };
         defaultText = fenced-code ''config.haskell-nix.haskell-nix.project config.haskell-nix.options'';
         description = ''
           The built project as haskell.nix returns it: `hsPkgs`, `shell`,
-          `projectCross` per cross platform, `plan-nix`, and the rest. The
-          shell is haskell.nix's own, with the common `shell.shellHook`
+          `projectCross` per cross platform, `plan-nix`, and the rest. A
+          replacement value must be a haskell.nix project too: it answers
+          `appendModule`, `shell` and `pkg-set`.
+
+          The shell is haskell.nix's own, with the common `shell.shellHook`
           appended and `shell.withHoogle` applied. Both go through
           `overrideAttrs`, so neither is evaluated unless the shell is.
+
+          With `fine-grained` on and selecting a package, the project is
+          re-evaluated with a module restoring each selected library from
+          its plan. The plans read the project as set here, whose
+          components differ from the final ones only by that restore.
         '';
         type = types.raw;
       };
@@ -155,6 +180,17 @@ in {
               , ghc-internal < 9.1500
         '';
       });
+    }
+
+    {
+      # This driver's own fine-grained steps. Driver defaults, so a
+      # top-level definition or a `haskell-nix.fine-grained` one wins.
+      haskell-nix.fine-grained = {
+        configure-flags = common.mkDriverDefault
+          (import ../../libs/haskell-nix/fine-grained/configure-flags.nix { inherit lib; });
+        intermediates = common.mkDriverDefault
+          (import ../../libs/haskell-nix/fine-grained/intermediates.nix { inherit lib; });
+      };
     }
 
   ]);

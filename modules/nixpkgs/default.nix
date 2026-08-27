@@ -128,8 +128,7 @@ in {
         type = types.submodule {
           options =
             import ./options.nix { inherit lib cfg; }
-            // import ./hooks.nix { inherit lib pkgs config; }
-            // import ./fine-grained.nix { inherit lib cfg config; };
+            // import ./hooks.nix { inherit lib pkgs config; };
         };
       };
 
@@ -176,6 +175,17 @@ in {
       # it. A definition rather than the option's `default`, so that a project
       # naming other tools keeps this entry.
       nixpkgs.options.tool-packages.cabal = mkOptionDefault cfg.pkgs.cabal-install;
+    }
+
+    {
+      # This driver's own fine-grained steps. Driver defaults, so a
+      # top-level definition or a `nixpkgs.fine-grained` one wins.
+      nixpkgs.fine-grained = {
+        configure-flags = common.mkDriverDefault
+          (import ../../libs/nixpkgs/fine-grained/configure-flags.nix { inherit lib; });
+        intermediates = common.mkDriverDefault
+          (import ../../libs/nixpkgs/fine-grained/intermediates.nix { inherit lib; });
+      };
     }
 
   ]);

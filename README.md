@@ -367,6 +367,98 @@ shell = {
 or wasm target is selected, Node.js is added to `buildInputs`.
 
 
+#### Fine-grained builds
+
+Sandstone (`pins/sandstone`) makes one content-addressed derivation for each
+module of a package, through Nix dynamic derivations. The package's own
+build then restores those artifacts and only links, so a change to one
+module rebuilds one module. The option is common, and both drivers honor
+it:
+
+```nix
+fine-grained.enable = true;
+```
+
+`fine-grained.packages` names the packages built this way. `null`, the
+default, takes every local package, and `[]` takes none. Like every common
+option, a field set under `nixpkgs.fine-grained` or
+`haskell-nix.fine-grained` overrides it for that driver only. Cross
+platforms are never built this way: a plan runs the Setup of the build
+platform, and its modules compile where the build runs.
+
+The feature is off by default, because it needs more than a stock Nix:
+
+- Evaluation reads `builtins.outputOf`, so the evaluator needs the
+  `dynamic-derivations` experimental feature.
+- A plan is a text-hashed content-addressed derivation, so the store needs
+  `ca-derivations` and `dynamic-derivations`. A daemon decides that for
+  itself, and a client flag does not override it.
+- A plan's builder speaks `builder-rpc-v0`, a system feature that only the
+  Nix sandstone pins carries.
+
+`fine-grained.nix` is that Nix, and the example wraps it, once per driver:
+
+```console
+$ nix-build examples/fine-grained -A run
+$ ./result/bin/fine-grained-nix build -f examples/fine-grained library-nixpkgs
+$ ./result/bin/fine-grained-nix build -f examples/fine-grained library-haskell-nix
+```
+
+The wrapper drives a store of its own, which is what lets it work while the
+daemon carries none of the features. `FINE_GRAINED_STORE` names that store,
+and the machine's own store fills it, so a path built here is copied rather
+than downloaded.
+
+A plan has to configure the package the way the package's own build
+configures it. Otherwise ghc turns the modules down and compiles them
+again, which costs time and never correctness. Each driver's
+`fine-grained.configure-flags` step reproduces its own builder's flags: the
+nixpkgs one from the `packages.<name>` fields, the haskell.nix one from the
+library component's config. Neither can read an argument set through
+`nixpkgs.options.package-arguments` or `nixpkgs.options.overrides`, so
+replace the step where one of them changes a build way.
+
+GHC reports the mismatch. Build with `-L` and read the package's own log: a
+module it takes from the plan is not listed at all, and a module it turns
+down reads `Compiling <module> ... [Flags changed]`. Every module listed
+that way is work the plan did twice.
+
+Profiling is the usual case of that. Nixpkgs builds profiling libraries by
+default, Cabal compiles that way after the way a plan captures, and the
+package's own build then compiles every module a second time. haskell.nix
+leaves profiling off by default. The drivers warn, and the remedy is per
+package:
+
+```nix
+packages.<name>.enableLibraryProfiling = false;
+```
+
+Documentation costs the same under the nixpkgs driver, for another reason.
+Haddock reads sources rather than compiled modules, so it reads every
+module again whatever a plan holds. Turn it off per package where that
+matters. The haskell.nix driver builds haddock as a separate derivation,
+which changes nothing for its component builds.
+
+```nix
+packages.<name>.doHaddock = false;
+```
+
+Under the haskell.nix driver the selection reads the cabal plan, so a stack
+project selects packages explicitly or not at all. The restore lands on the
+library component's `preBuild` and replaces any other definition of it,
+except the package-level hook, which it re-includes. A package whose cabal
+file hpack generates is skipped with a warning, unless the selection names
+it. A plan fails loudly where configure needs more than the tree, a
+`pkgconfig-depends` probe or a backpack instantiation among them.
+
+A build can also resume from the tree of an earlier one, without sandstone:
+`packages.<name>.previousIntermediates` takes a path carrying
+`share/haskell/<ghc-version>/<pname>-<version>/dist/build`, and the build
+restores it before `Setup build`. The nixpkgs driver restores the whole
+package's tree, and the haskell.nix driver the library component's. A
+fine-grained plan replaces the value for the packages it selects.
+
+
 ### The haskell.nix driver
 
 ```nix
@@ -431,7 +523,6 @@ Driver configuration:
 | `nixpkgs.options.overrides` | Overlays over the package set, applied last |
 | `nixpkgs.options.packages` | Explicit local package map (bypasses discovery) |
 | `nixpkgs.options.use-plan` | Take the project structure from the cabal plan of the haskell.nix driver |
-| `nixpkgs.options.fine-grained` | Build the selected packages one module at a time, through sandstone and Nix dynamic derivations |
 | `nixpkgs.options.extra-package-defaults` | Jailbreak/check/haddock defaults for fetched packages |
 | `nixpkgs.options.cross-package-defaults` | Jailbreak/haddock/profiling defaults for a cross set the driver builds itself |
 | `nixpkgs.options.tool-packages` | Overrides for `shell.tools` resolution, `cabal` among them by default |
@@ -490,75 +581,6 @@ Caveats, by construction of nixpkgs' Haskell infrastructure:
   nixpkgs cannot assemble a working set for needs exactly that. A toolchain
   on the compiler above the table is not honored here, since only a cross
   set can be given one.
-
-
-#### Fine-grained builds
-
-Sandstone (`pins/sandstone`) makes one content-addressed derivation for each
-module of a package, through Nix dynamic derivations. The package's own
-build then restores those artifacts and only links, so a change to one
-module rebuilds one module.
-
-```nix
-nixpkgs.options.fine-grained.enable = true;
-```
-
-`fine-grained.packages` names the packages built this way. `null`, the
-default, takes every local package, and `[]` takes none. Cross platforms are
-never built this way: a plan builds Setup with the compiler it configures
-with, and a cross set's Setup does not run on the builder.
-
-The feature is off by default, because it needs more than a stock Nix:
-
-- Evaluation reads `builtins.outputOf`, so the evaluator needs the
-  `dynamic-derivations` experimental feature.
-- A plan is a text-hashed content-addressed derivation, so the store needs
-  `ca-derivations` and `dynamic-derivations`. A daemon decides that for
-  itself, and a client flag does not override it.
-- A plan's builder speaks `builder-rpc-v0`, a system feature that only the
-  Nix sandstone pins carries.
-
-`nixpkgs.options.fine-grained.nix` is that Nix, and the example wraps it:
-
-```console
-$ nix-build examples/fine-grained -A run
-$ ./result/bin/fine-grained-nix build -f examples/fine-grained library
-```
-
-The wrapper drives a store of its own, which is what lets it work while the
-daemon carries none of the features. `FINE_GRAINED_STORE` names that store,
-and the machine's own store fills it, so a path built here is copied rather
-than downloaded.
-
-A plan has to configure the package the way the package's own build
-configures it. Otherwise ghc turns the modules down and compiles them
-again, which costs time and never correctness.
-`nixpkgs.options.fine-grained.configure-flags` reads the `packages.<name>`
-fields to reproduce those flags. It cannot read an argument set through
-`package-arguments` or `overrides`, so replace that step where one of them
-changes a build way.
-
-Ghc reports the mismatch. Build with `-L` and read the package's own log: a
-module it takes from the plan is not listed at all, and a module it turns
-down reads `Compiling <module> ... [Flags changed]`. Every module listed
-that way is work the plan did twice.
-
-Profiling is the usual case of that. Nixpkgs builds profiling libraries by
-default, Cabal compiles that way after the way a plan captures, and the
-package's own build then compiles every module a second time. The driver
-warns, and the remedy is per package:
-
-```nix
-packages.<name>.enableLibraryProfiling = false;
-```
-
-Documentation costs the same, for another reason. Haddock reads sources
-rather than compiled modules, so it reads every module again whatever a plan
-holds. Turn it off per package where that matters:
-
-```nix
-packages.<name>.doHaddock = false;
-```
 
 
 ### Overriding a driver step

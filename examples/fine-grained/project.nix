@@ -8,6 +8,6 @@
   packages.fine-grained.enableLibraryProfiling = false;
   packages.fine-grained.doHaddock = false;
 
-  nixpkgs.options.fine-grained.enable = true;
+  fine-grained.enable = true;
 
 }

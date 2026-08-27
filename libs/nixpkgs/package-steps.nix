@@ -66,6 +66,10 @@ let setArg = attr: value: compose.overrideCabal (drv: { ${attr} = value; });
           enableExecutableProfiling = tweaks.enableProfiling;
         }));
 
+    previousIntermediatesStep = tweaks:
+      lib.optional (tweaks.previousIntermediates != null)
+        (setArg "previousIntermediates" tweaks.previousIntermediates);
+
     srcStep = tweaks:
       lib.optional (tweaks.src != null) (compose.overrideSrc { inherit (tweaks) src; });
 
@@ -76,4 +80,5 @@ in patchSteps tweaks
    ++ setupSteps tweaks
    ++ fieldSteps tweaks
    ++ profilingStep tweaks
+   ++ previousIntermediatesStep tweaks
    ++ srcStep tweaks
