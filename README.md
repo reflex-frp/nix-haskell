@@ -449,7 +449,11 @@ library component's `preBuild` and replaces any other definition of it,
 except the package-level hook, which it re-includes. A package whose cabal
 file hpack generates is skipped with a warning, unless the selection names
 it. A plan fails loudly where configure needs more than the tree, a
-`pkgconfig-depends` probe or a backpack instantiation among them.
+`pkgconfig-depends` probe or a backpack instantiation among them. A module
+that reads a file at compile time, through `embedFile` say, works when the
+cabal file states the file under `extra-source-files` or `data-files`;
+those ride into every module's derivation. An unstated file fails its
+module loudly.
 
 A build can also resume from the tree of an earlier one, without sandstone:
 `packages.<name>.previousIntermediates` takes a path carrying

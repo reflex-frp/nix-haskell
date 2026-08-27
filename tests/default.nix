@@ -447,6 +447,10 @@ let eval = import ../eval.nix { inherit system pkgs inputs; };
 
           fallback = flagsFor quiet;
 
+          # Cabal hashes the flag assignment into the unit id, so a plan
+          # must state the package's flags.
+          assigned = flagsFor (quiet // { flags = { demo = true; webkit = false; }; });
+
           # The haskell.nix step takes the library component's own config,
           # so the stub carries every field it reads.
           component = {
@@ -488,6 +492,8 @@ let eval = import ../eval.nix { inherit system pkgs inputs; };
             "dead code stated off" = hasInfix "--disable-split-sections" stated;
             "ghc options carried" = hasInfix "--ghc-option=-Wall" stated;
             "dead code falls back" = hasInfix "--enable-split-sections" fallback;
+            "flag stated on" = hasInfix "-fdemo" assigned;
+            "flag stated off" = hasInfix "-f-webkit" assigned;
             "haskell.nix target stated" = hasPrefix "lib:hello" statedHaskellNix;
             "haskell.nix dead code stated off" = hasInfix "--disable-split-sections" statedHaskellNix;
             "haskell.nix ghc options carried" = hasInfix "--ghc-option=-Wall" statedHaskellNix;

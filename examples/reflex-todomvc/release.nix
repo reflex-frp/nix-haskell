@@ -10,9 +10,14 @@
 #   nix-build release.nix -A bundle
 #   nix-build release.nix -A build.haskell-nix.ghc912.wasi32
 #   nix-build release.nix -A bundle.haskell-nix.ghc912.wasi32.optimized
+#   nix-build release.nix -A fine-grained.haskell-nix.ghc912
 #
 # `wasm-meta` is the same matrix with the wasm target's compiler taken from
 # the ghc-wasm-meta pin instead of the driver's own.
+#
+# `fine-grained` is the native executable per driver and compiler, with the
+# library built one module per derivation. Those rows appear only where the
+# Nix reading this carries dynamic derivations, like the root release.
 #
 # Combinations that cannot work are absent rather than failing. The nixpkgs
 # driver has no 9.14 Haskell package set worth building against. That
@@ -133,6 +138,31 @@ let nix-haskell = import ../.. { inherit system inputs; };
           '';
         }));
 
+    # The fine-grained variant: the selection is stated, because cabal
+    # counts the source-repository-packages as local too, and a row bounds
+    # its work to the project's own package. Haddock reads sources rather
+    # than compiled modules, and the nixpkgs driver would warn about the
+    # second read.
+    fineGrainedModule = {
+      fine-grained = {
+        enable = true;
+        packages = [ "reflex-todomvc" ];
+      };
+      packages.reflex-todomvc.doHaddock = false;
+    };
+
+    # The native executable as each driver names it. The nixpkgs driver
+    # builds the library and the executable in one derivation.
+    fineGrainedExe = {
+      haskell-nix = p:
+        p.haskell-nix.project.hsPkgs.reflex-todomvc.components.exes.reflex-todomvc;
+      nixpkgs = p:
+        p.nixpkgs.project.packages.reflex-todomvc;
+    };
+
+    fineGrainedBuilt = driver: series:
+      fineGrainedExe.${driver} (variant series false [ fineGrainedModule ]);
+
     # The one matrix of driver, compiler series, wasm-meta and cross targets.
     # Each result set applies its own leaf function to every cell.
     matrix = leaf: walkable {
@@ -169,5 +199,20 @@ in {
   bundle = matrix bundled;
 
   shell-build = matrix shellBuilt;
+
+} // lib.optionalAttrs (builtins ? outputOf) {
+
+  fine-grained = walkable {
+
+    haskell-nix = {
+      ghc912 = fineGrainedBuilt "haskell-nix" "9.12";
+      ghc914 = fineGrainedBuilt "haskell-nix" "9.14";
+    };
+
+    nixpkgs = {
+      ghc912 = fineGrainedBuilt "nixpkgs" "9.12";
+    };
+
+  };
 
 }

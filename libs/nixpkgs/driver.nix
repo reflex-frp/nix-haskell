@@ -81,6 +81,7 @@ let compose = pkgs.haskell.lib.compose;
     conditionHolds = condition: options.evaluate-condition { inherit condition hostMap; };
     decodeSrp = import ../source-repository-package.nix;
     haskellDependencies = import ./haskell-dependencies.nix { inherit lib; };
+    haskellDependencyClosure = import ./haskell-dependency-closure.nix { inherit lib; };
 
     # ------------------------------------------------------------------------
     # Local packages: { <package-name> = { src; external; }; }
@@ -288,7 +289,7 @@ let compose = pkgs.haskell.lib.compose;
                 intermediates = fineGrained.intermediates {
                   inherit name package pkgs;
                   ghc = haskellPackages.ghc;
-                  dependencies = haskellDependencies package;
+                  dependencies = haskellDependencyClosure package;
                   shim = fineGrainedShim;
                   tool = fineGrained.tool;
                   configure-flags = flags;

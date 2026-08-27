@@ -70,8 +70,15 @@ let platform = pkgs.stdenv.hostPlatform;
 
     stanzaOptions = map ghcOption (ghc-options ++ (tweaks.ghcOptions or []));
 
+    # Cabal hashes the flag assignment into the unit id, so a plan that
+    # leaves a stated flag to its default computes another id, and ghc
+    # turns every module down over the name alone.
+    assignments = lib.mapAttrsToList
+      (flag: enabled: "-f" + lib.optionalString (!enabled) "-" + flag)
+      (tweaks.flags or {});
+
     flags = lib.concatStringsSep " "
-      (ways ++ detail ++ interfaces ++ determinism ++ stanzaOptions
+      (assignments ++ ways ++ detail ++ interfaces ++ determinism ++ stanzaOptions
        ++ (tweaks.configureFlags or []));
 
     # The shim stops Cabal at its first `--make`, so the modules hold one
