@@ -33,6 +33,12 @@ let nix-haskell = import ./deps/nix-haskell {};
 in nix-haskell { src = ./.; }
 ```
 
+Pin this repository with submodules. It keeps haskell.nix under `pins/` as a
+git submodule, so a pin that fetches only a tarball leaves `pins/haskell-nix`
+empty. Use `fetchSubmodules = true` for a nix-thunk, or
+`git+https://github.com/reflex-frp/nix-haskell?submodules=1` for a flake input.
+`github:reflex-frp/nix-haskell` does not work.
+
 The result is an attribute set:
 
 ```nix
@@ -62,7 +68,8 @@ recursively.
 
 ```nix
 {
-  inputs.nix-haskell.url = "github:reflex-frp/nix-haskell";
+  inputs.nix-haskell.url =
+    "git+https://github.com/reflex-frp/nix-haskell?submodules=1";
 
   outputs = { nix-haskell, ... }:
     let lib = nix-haskell.lib.x86_64-linux;
