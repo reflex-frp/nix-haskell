@@ -33,11 +33,11 @@ let nix-haskell = import ./deps/nix-haskell {};
 in nix-haskell { src = ./.; }
 ```
 
-Pin this repository with submodules. It keeps haskell.nix under `pins/` as a
-git submodule, so a pin that fetches only a tarball leaves `pins/haskell-nix`
-empty. Use `fetchSubmodules = true` for a nix-thunk, or
-`git+https://github.com/reflex-frp/nix-haskell?submodules=1` for a flake input.
-`github:reflex-frp/nix-haskell` does not work.
+Pin this repository together with its submodules. The repository keeps `haskell.nix` under `pins/` as a git submodule. A pin that fetches only a tarball leaves `pins/haskell-nix` empty.
+
+Use the pin form that fetches submodules:
+- For a nix-thunk, set `fetchSubmodules = true`.
+- For a flake input, use `git+https://github.com/reflex-frp/nix-haskell?submodules=1`. `github:reflex-frp/nix-haskell` does not work.
 
 The result is an attribute set:
 
