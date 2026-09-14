@@ -5,6 +5,7 @@ let styleCss = [ "static/style.css" ];
 in {
   imports = [
     (import "${nix-haskell-patches}/js/splitmix" { drivers = [ "haskell-nix" ]; })
+    (import "${nix-haskell-patches}/wasm/jsaddle-wasm" { drivers = [ "haskell-nix" ]; })
   ];
 
   name = "reflex-todomvc";
