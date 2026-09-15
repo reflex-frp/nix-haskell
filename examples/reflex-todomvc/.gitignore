@@ -1,6 +1,7 @@
 result
 result-*
 ghc_wasm_jsffi.js
+reflex-todomvc.wasm
 dist
 dist-newstyle
 cabal-dev

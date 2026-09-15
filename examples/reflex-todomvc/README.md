@@ -19,11 +19,12 @@ nix-build -A haskell-nix.projectCross.ghcjs.hsPkgs.reflex-todomvc.components.exe
 nix-build -A nixpkgs.packages.reflex-todomvc
 ```
 
-`wasm.js` imports `ghc_wasm_jsffi.js`. GHC generates that file from the
-wasm binary, so it is not in the repository. Build it with nix, with the
-same driver and compiler that built `result`:
+The wasm page loads two files that are not in the repository: the binary
+through the optimizer, and the `ghc_wasm_jsffi.js` that GHC generates from
+it. Link both beside `wasm.js`, from the same bundle row so they match:
 
 ```bash
+nix-build release.nix -A bundle.haskell-nix.ghc914.wasi32.optimized -o reflex-todomvc.wasm
 nix-build release.nix -A bundle.haskell-nix.ghc914.wasi32.jsffi -o ghc_wasm_jsffi.js
 ```
 
