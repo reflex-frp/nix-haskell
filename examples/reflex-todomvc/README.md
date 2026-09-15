@@ -30,6 +30,12 @@ nix-build release.nix -A bundle.haskell-nix.ghc914.wasi32.jsffi -o ghc_wasm_jsff
 
 For a `-wasm-meta` build, use the `bundle.wasm-meta` rows with `ghc912`.
 
+The GHCJS page loads `all.js` from the optimized `.jsexe` the same way:
+
+```bash
+nix-build release.nix -A bundle.haskell-nix.ghc914.ghcjs.optimized -o reflex-todomvc.jsexe
+```
+
 Then open `index-wasm.html` (wasm) or `index-js.html` (GHCJS) in your
 browser!
 
