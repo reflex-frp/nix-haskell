@@ -19,6 +19,16 @@ nix-build -A haskell-nix.projectCross.ghcjs.hsPkgs.reflex-todomvc.components.exe
 nix-build -A nixpkgs.packages.reflex-todomvc
 ```
 
+`wasm.js` imports `ghc_wasm_jsffi.js`. GHC generates that file from the
+wasm binary, so it is not in the repository. Build it with nix, with the
+same driver and compiler that built `result`:
+
+```bash
+nix-build release.nix -A bundle.haskell-nix.ghc914.wasi32.jsffi -o ghc_wasm_jsffi.js
+```
+
+For a `-wasm-meta` build, use the `bundle.wasm-meta` rows with `ghc912`.
+
 Then open `index-wasm.html` (wasm) or `index-js.html` (GHCJS) in your
 browser!
 

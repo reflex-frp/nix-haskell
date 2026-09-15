@@ -1,5 +1,6 @@
 result
 result-*
+ghc_wasm_jsffi.js
 dist
 dist-newstyle
 cabal-dev
