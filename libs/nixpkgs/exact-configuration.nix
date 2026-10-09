@@ -54,13 +54,22 @@
 
   # Cabal assigns no flag itself when configuring exactly, so every flag the
   # package declares takes the value the cabal file declares for it, which is
-  # True where it states none.
+  # True where it states none. A value may sit on the line below `Default:`,
+  # which is where Cabal reads a field whose own line holds nothing.
   exactConfigurationFlags=$(awk '
-    /^[Ff]lag[ \t]+/ { name = $2; value[name] = "True"; order[++n] = name; current = name; next }
-    /^[^ \t]/        { current = "" }
-    current && /[Dd]efault[ \t]*:/ {
-      v = $NF
-      value[current] = (v ~ /[Ff]alse/) ? "False" : "True"
+    /^[Ff]lag[ \t]+/ { name = $2; value[name] = "True"; order[++n] = name; current = name; wrapped = 0; next }
+    /^[^ \t]/        { current = ""; wrapped = 0 }
+    current && /^[ \t]+[Dd]efault[ \t]*:/ {
+      rest = $0
+      sub(/^[ \t]+[Dd]efault[ \t]*:[ \t]*/, "", rest)
+      if (rest != "")
+        value[current] = (rest ~ /^[Ff]alse/) ? "False" : "True"
+      wrapped = (rest == "")
+      next
+    }
+    current && wrapped && NF > 0 {
+      value[current] = ($1 ~ /^[Ff]alse/) ? "False" : "True"
+      wrapped = 0
     }
     END {
       for (i = 1; i <= n; i++)
