@@ -1,14 +1,10 @@
 {
   inputs = {
-    # pins/haskell-nix is a git submodule. This line makes nix fetch it
-    # when the flake is fetched over git (Nix 2.27+). On older Nix, add
-    # ?submodules=1 to the flake URL.
     self.submodules = true;
 
     nixpkgs.url = ./pins/nixpkgs;
     haskell-nix.url = ./pins/haskell-nix;
 
-    # A submodule as well, and it carries no flake of its own.
     sandstone = {
       url = ./pins/sandstone;
       flake = false;

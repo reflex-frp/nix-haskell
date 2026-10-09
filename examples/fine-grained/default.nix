@@ -8,7 +8,9 @@
 #   nix-build examples/fine-grained -A run
 #   ./result/bin/fine-grained-nix build -f examples/fine-grained library-nixpkgs
 #   ./result/bin/fine-grained-nix build -f examples/fine-grained library-haskell-nix
-{ system ? builtins.currentSystem, inputs ? {} }:
+{ system ? builtins.currentSystem
+, inputs ? import ../../inputs.nix
+}:
 
 let nix-haskell = import ../../default.nix { inherit system inputs; };
 

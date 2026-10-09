@@ -2,6 +2,7 @@
   "owner": "NixOS",
   "repo": "nixpkgs",
   "branch": "nixos-26.05",
+  "fetchSubmodules": false,
   "private": false,
   "rev": "6d65bfc1bcef2ef39a239d38e577e92a89fb0f07",
   "sha256": "175mxswkn7r819jr087z96bi6dc1cvc3a2a9vlspd7gis17123kn"

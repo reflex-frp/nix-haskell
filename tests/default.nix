@@ -28,7 +28,7 @@
 #
 # Runnable without the flake: nix-build tests -A translation-totality
 { system ? builtins.currentSystem
-, inputs ? {}
+, inputs ? import ../inputs.nix
 , pkgs ?
     if inputs ? nixpkgs
     then import inputs.nixpkgs { inherit system; }

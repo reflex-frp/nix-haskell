@@ -23,6 +23,6 @@ let flakeInputs = (import
           };
       in builtins.listToAttrs (map entryFor directories);
 
-    thunkSrcs = thunkSources ./pins;
+    thunkSrcs = thunkSources ./deps;
 
 in flakeSrcs // thunkSrcs

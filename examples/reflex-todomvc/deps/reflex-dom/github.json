@@ -1,8 +1,9 @@
 {
-  "owner": "ymeister",
+  "owner": "reflex-frp",
   "repo": "reflex-dom",
-  "branch": "ghc(js)-9.10",
+  "branch": "develop",
+  "fetchSubmodules": false,
   "private": false,
-  "rev": "af6e94c23ed437841a67d9d5d7d47462cc7f3c19",
-  "sha256": "0ssrcy0rij9xz58h75ncgpfb88k8azm5cq3j1pakain1y1xpb5ha"
+  "rev": "7193774e6beb8489f9f843448ade91548ab5f97c",
+  "sha256": "04jsjar31qisj60bmkwwkq2cx8ncp2070bph4dc2gwn6gf6d1gij"
 }

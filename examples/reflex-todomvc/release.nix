@@ -23,7 +23,9 @@
 # driver has no 9.14 Haskell package set worth building against. That
 # driver's own compiler is therefore 9.12, and it reaches a wasm target
 # only through the ghc-wasm-meta pin.
-{ system ? builtins.currentSystem, inputs ? {} }:
+{ system ? builtins.currentSystem
+, inputs ? import ./inputs.nix
+}:
 
 let nix-haskell = import ../.. { inherit system inputs; };
 

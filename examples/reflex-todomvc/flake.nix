@@ -1,11 +1,5 @@
 {
   inputs = {
-    # This example is part of the nix-haskell repository two directories
-    # up. The flake commands and plain nix-shell/nix-build (which go through
-    # default.nix) therefore build from the same checkout, and nix-haskell's
-    # pins/ submodules are this flake's submodules too. Nix 2.27+ fetches
-    # them from the line below. On older Nix, add ?submodules=1 to the flake
-    # URL.
     self.submodules = true;
 
     nix-haskell.url = ../..;

@@ -1,4 +1,6 @@
-{ system ? builtins.currentSystem, inputs ? {} }:
+{ system ? builtins.currentSystem
+, inputs ? import ./inputs.nix
+}:
 
 let nix-haskell = import ../.. { inherit system inputs; };
     project = nix-haskell (import ./project.nix);

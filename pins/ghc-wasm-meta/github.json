@@ -1,7 +1,7 @@
 {
   "owner": "haskell-wasm",
   "repo": "ghc-wasm-meta",
-  "branch": "master",
+  "fetchSubmodules": false,
   "private": false,
   "rev": "5b96779e3d356b3962b6e9c85a9db3a1fcc31ed1",
   "sha256": "15hb9y0rdf3yfm01biy08a7x4bkdz270adv09l7479lnpwdrfj7x"

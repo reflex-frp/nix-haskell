@@ -14,7 +14,9 @@
 #
 # `all` is a directory of symlinks to every other attribute, so one build
 # realises everything and names what it realised.
-{ system ? builtins.currentSystem, inputs ? {} }:
+{ system ? builtins.currentSystem
+, inputs ? import ./inputs.nix
+}:
 
 let pkgs = (import ./default.nix { inherit system inputs; } {}).pkgs;
 
