@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## Release 1.0
+
 ### Added
 
 - A `nixpkgs` driver: builds the project with the Haskell infrastructure of
@@ -208,7 +210,3 @@
   function over its arguments and reads no module configuration.
   `libs/nixpkgs/project-file.nix` builds haskell.nix's parser itself from
   `haskell-nix-src`. Passing a `parser` still replaces it.
-
-### Removed
-
-- The `reflex-platform` pin, flake input, and planned driver.
