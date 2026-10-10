@@ -6,3 +6,4 @@
 	path = pins/sandstone
 	url = https://github.com/obsidiansystems/sandstone.git
 	branch = cabal-build
+	shallow = true
