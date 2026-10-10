@@ -49,12 +49,12 @@ let pkgs = (import ./default.nix { inherit system inputs; } {}).pkgs;
       # `builtins.outputOf`, so they join them only where the Nix reading
       # this carries dynamic derivations, and the wrapper builds them
       # anywhere else.
-      fine-grained =
-        let example = import ./examples/fine-grained { inherit system inputs; };
-        in { inherit (example) nix run; }
-           // lib.optionalAttrs (builtins ? outputOf) {
-             inherit (example) library-nixpkgs library-haskell-nix;
-           };
+      #fine-grained =
+      #  let example = import ./examples/fine-grained { inherit system inputs; };
+      #  in { inherit (example) nix run; }
+      #     // lib.optionalAttrs (builtins ? outputOf) {
+      #       inherit (example) library-nixpkgs library-haskell-nix;
+      #     };
 
     };
 

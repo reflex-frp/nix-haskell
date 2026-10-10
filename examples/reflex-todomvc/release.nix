@@ -204,17 +204,17 @@ in {
 
 } // lib.optionalAttrs (builtins ? outputOf) {
 
-  fine-grained = walkable {
+  #fine-grained = walkable {
 
-    haskell-nix = {
-      ghc912 = fineGrainedBuilt "haskell-nix" "9.12";
-      ghc914 = fineGrainedBuilt "haskell-nix" "9.14";
-    };
+  #  haskell-nix = {
+  #    ghc912 = fineGrainedBuilt "haskell-nix" "9.12";
+  #    ghc914 = fineGrainedBuilt "haskell-nix" "9.14";
+  #  };
 
-    nixpkgs = {
-      ghc912 = fineGrainedBuilt "nixpkgs" "9.12";
-    };
+  #  nixpkgs = {
+  #    ghc912 = fineGrainedBuilt "nixpkgs" "9.12";
+  #  };
 
-  };
+  #};
 
 }
