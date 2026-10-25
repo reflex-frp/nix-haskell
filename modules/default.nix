@@ -13,6 +13,7 @@
 
     ./inputs.nix
     ./optimizations.nix
+    ./overlays.nix
   ];
 
 }

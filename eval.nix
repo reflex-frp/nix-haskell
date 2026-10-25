@@ -36,20 +36,60 @@ let inputsWithPkgs = inputs // { inherit pkgs; };
 
     src = builtins.path { name = "nix-haskell-src"; path = ./.; filter = keep; };
 
-in pkgs.lib.evalModules {
-  modules = [
-    ./modules
-    systemDefault
-    argsFromConfig
-    inputDefaults
-  ] ++ pkgs.lib.toList module;
+    specialArgs = {
+      nix-haskell-libs = "${src}/libs";
+      # A bare path: modules/inputs.nix imports ../inputs.nix, and the
+      # filtered copy does not carry it.
+      nix-haskell-modules = ./modules;
+      nix-haskell-patches = "${src}/modules/patches";
+      nix-haskell-compilers = "${src}/modules/compilers";
+    };
 
-  specialArgs = {
-    nix-haskell-libs = "${src}/libs";
-    # A bare path: modules/inputs.nix imports ../pins, and the filtered
-    # copy does not carry pins/.
-    nix-haskell-modules = ./modules;
-    nix-haskell-patches = "${src}/modules/patches";
-    nix-haskell-compilers = "${src}/modules/compilers";
-  };
-}
+    evalWith = definitions: pkgs.lib.evalModules {
+      modules = [
+        ./modules
+        systemDefault
+        argsFromConfig
+        inputDefaults
+      ] ++ pkgs.lib.toList module ++ definitions;
+
+      inherit specialArgs;
+    };
+
+    overridesFor = options: diff:
+      if pkgs.lib.isOption options
+      then overrideOption options diff
+      else pkgs.lib.mapAttrs (name: overridesFor options.${name}) diff;
+
+    forcePriority = (pkgs.lib.mkForce null).priority;
+
+    overlayable = prio: prio > forcePriority;
+
+    overrideAbove = prio: value:
+      pkgs.lib.mkIf (overlayable prio) (pkgs.lib.mkOverride (prio - 1) value);
+
+    overrideOption = option: diff:
+      if option.type.name == "submodule"
+      then overridesFor option.valueMeta.configuration.options diff
+      else if builtins.elem option.type.name [ "attrsOf" "lazyAttrsOf" ]
+      then overrideEachKey option diff
+      else overrideAbove option.highestPrio diff;
+
+    overrideEachKey = option: diff:
+      let prios = pkgs.lib.modules.mergeAttrDefinitionsWithPrio option;
+          prioOf = name: prios.${name}.highestPrio or pkgs.lib.modules.defaultOverridePriority;
+      in pkgs.lib.mapAttrs (name: overrideAbove (prioOf name)) diff;
+
+    applyOverlay = pass: overlay:
+      let diff = overlay result.config pass.evaluated.config;
+          definitions = pass.definitions ++ [ { config = overridesFor pass.evaluated.options diff; } ];
+      in {
+        inherit definitions;
+        evaluated = evalWith definitions;
+      };
+
+    plain = evalWith [];
+
+    result = (builtins.foldl' applyOverlay { definitions = []; evaluated = plain; } plain.config.overlays).evaluated;
+
+in result
