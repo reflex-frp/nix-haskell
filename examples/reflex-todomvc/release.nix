@@ -24,7 +24,7 @@
 # driver's own compiler is therefore 9.12, and it reaches a wasm target
 # only through the ghc-wasm-meta pin.
 { system ? builtins.currentSystem
-, inputs ? import ./inputs.nix
+, inputs ? import ./inputs.nix { inherit system; }
 }:
 
 let nix-haskell = import ../.. { inherit system inputs; };

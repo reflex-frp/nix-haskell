@@ -634,6 +634,10 @@
     },
     "root": {
       "inputs": {
+        "flake-compat": [
+          "nix-haskell",
+          "flake-compat"
+        ],
         "nix-haskell": "nix-haskell",
         "nixpkgs": [
           "nix-haskell",

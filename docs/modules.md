@@ -4267,8 +4267,9 @@ import config."haskell-nix".nixpkgsSource ({ inherit system; } // config."haskel
 
 
 The arguments the driver imports nixpkgs with: haskell\.nix’s own
-overlays, which put ` haskell-nix ` into the package set, and the
-configuration its compilers are built under\.
+overlays, which put ` haskell-nix ` into the package set, then the
+overlays of ` inputs.pkgs `, and the configuration its compilers are
+built under\.
 
 
 
@@ -4280,7 +4281,9 @@ raw value
 *Default:*
 
 ```
-config."haskell-nix".input.nixpkgsArgs
+config."haskell-nix".input.nixpkgsArgs // {
+  overlays = config."haskell-nix".input.nixpkgsArgs.overlays ++ config.inputs.pkgs.overlays;
+}
 ```
 
 *Declared by:*
@@ -6207,8 +6210,9 @@ attribute set
 
 Sources of dependencies, keyed the way flake inputs are\. An entry
 accepts whatever a flake input can be: a flake input, a store path,
-a checkout, or a packed thunk\. Add entries beyond the ones in
-` pins/ ` freely\.
+a checkout, or a packed thunk\. Entries missing here fall back to
+nix-haskell’s own ` inputs.nix `\. An entry that is not a source, such as the ` pkgs `
+package set, passes through unchanged\.
 
 
 
@@ -7651,7 +7655,7 @@ raw value
 *Default:*
 
 ```
-import config.inputs.nixpkgs { inherit (config) system; }
+config.inputs.pkgs
 ```
 
 
@@ -7659,7 +7663,7 @@ import config.inputs.nixpkgs { inherit (config) system; }
 *Example:*
 
 ```
-import config.inputs.nixpkgs { inherit (config) system; overlays = [ my-overlay ]; }
+config.inputs.pkgs.appendOverlays [ my-overlay ]
 ```
 
 *Declared by:*

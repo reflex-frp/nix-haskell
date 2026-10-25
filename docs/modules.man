@@ -3050,15 +3050,18 @@ import config.\(dqhaskell\-nix\(dq.nixpkgsSource ({ inherit system; } // config.
 .UE \c
 .SS haskell\-nix.nixpkgsArgs
 The arguments the driver imports nixpkgs with: haskell.nix\(cqs own
-overlays, which put \f[CR]haskell\-nix\f[R] into the package set, and
-the configuration its compilers are built under.
+overlays, which put \f[CR]haskell\-nix\f[R] into the package set, then
+the overlays of \f[CR]inputs.pkgs\f[R], and the configuration its
+compilers are built under.
 .PP
 \f[I]Type:\f[R] raw value
 .PP
 \f[I]Default:\f[R]
 .IP
 .EX
-config.\(dqhaskell\-nix\(dq.input.nixpkgsArgs
+config.\(dqhaskell\-nix\(dq.input.nixpkgsArgs // {
+  overlays = config.\(dqhaskell\-nix\(dq.input.nixpkgsArgs.overlays ++ config.inputs.pkgs.overlays;
+}
 .EE
 .PP
 \f[I]Declared by:\f[R] \- \c
@@ -4345,7 +4348,10 @@ the entry\(cqs \f[CR].rev\f[R] attribute against the stanza\(cqs
 Sources of dependencies, keyed the way flake inputs are.
 An entry accepts whatever a flake input can be: a flake input, a store
 path, a checkout, or a packed thunk.
-Add entries beyond the ones in \f[CR]pins/\f[R] freely.
+Entries missing here fall back to nix\-haskell\(cqs own
+\f[CR]inputs.nix\f[R].
+An entry that is not a source, such as the \f[CR]pkgs\f[R] package set,
+passes through unchanged.
 .PP
 \f[I]Type:\f[R] attribute set of raw value
 .PP
@@ -5449,13 +5455,13 @@ The nixpkgs package set the driver builds with.
 \f[I]Default:\f[R]
 .IP
 .EX
-import config.inputs.nixpkgs { inherit (config) system; }
+config.inputs.pkgs
 .EE
 .PP
 \f[I]Example:\f[R]
 .IP
 .EX
-import config.inputs.nixpkgs { inherit (config) system; overlays = [ my\-overlay ]; }
+config.inputs.pkgs.appendOverlays [ my\-overlay ]
 .EE
 .PP
 \f[I]Declared by:\f[R] \- \c

@@ -5,17 +5,25 @@
     nix-haskell.url = ../..;
 
     nixpkgs.follows = "nix-haskell/nixpkgs";
+    flake-compat.follows = "nix-haskell/flake-compat";
   };
 
   outputs = inputs@{ self, ... }:
-    let nixpkgs =
-          if inputs ? "nixpkgs"
-          then inputs.nixpkgs
-          else builtins.getFlake "nixpkgs";
+    let sources = import ./inputs.nix { overrides = inputs; };
 
-        eachSystem = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed;
+        lib = import "${sources.nixpkgs}/lib";
 
-        projectFor = system: import ./default.nix { inherit system inputs; };
+        eachSystem = lib.genAttrs lib.systems.flakeExposed;
+
+        inputsFor = system: import ./inputs.nix {
+          inherit system;
+          overrides = inputs;
+        };
+
+        projectFor = system: import ./default.nix {
+          inherit system;
+          inputs = inputsFor system;
+        };
 
         todomvcExe = crossProject:
           crossProject.hsPkgs.reflex-todomvc.components.exes.reflex-todomvc;
@@ -24,7 +32,10 @@
         projectFor system // {
           # Every driver, compiler and cross target this example is meant
           # to work for, built both ways.
-          release = import ./release.nix { inherit system inputs; };
+          release = import ./release.nix {
+            inherit system;
+            inputs = inputsFor system;
+          };
         }
       );
 
@@ -42,7 +53,10 @@
         });
 
       devShells = eachSystem (system:
-        let shells = import ./shell.nix { inherit system inputs; };
+        let shells = import ./shell.nix {
+              inherit system;
+              inputs = inputsFor system;
+            };
         in shells // { default = shells.haskell-nix; }
       );
     };

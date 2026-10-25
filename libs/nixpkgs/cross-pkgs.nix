@@ -16,14 +16,14 @@
 #
 #   import ./cross-pkgs.nix {
 #     inherit lib;
-#     nixpkgs = config.inputs.nixpkgs;
+#     pkgs = config.nixpkgs.pkgs;
 #     system = "x86_64-linux";
 #     platform = "wasi32";
 #     compiler = <resolved entry with a toolchain>;
 #     defaults = { jailbreak = true; haddock = false; profiling = false; };
 #   }
 #   => <a wasi32 package set whose Haskell packages build with the bindist>
-{ lib, nixpkgs, system, platform, compiler, defaults }:
+{ lib, pkgs, system, platform, compiler, defaults }:
 
 let toolchain = compiler.toolchain.package;
 
@@ -105,7 +105,7 @@ let toolchain = compiler.toolchain.package;
       };
     };
 
-in import nixpkgs {
+in import ./reimport.nix pkgs {
   inherit system crossSystem;
   config.replaceCrossStdenv = crossStdenv;
   crossOverlays = [ haskellOverlay ];

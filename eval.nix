@@ -1,28 +1,26 @@
 { system ? builtins.currentSystem
-, inputs ? import ./inputs.nix
-, pkgs ?
-    if inputs ? nixpkgs
-    then import inputs.nixpkgs { inherit system; }
-    else import ./pins/nixpkgs { inherit system; }
+, inputs ? import ./inputs.nix { inherit system; }
+, pkgs ? inputs.pkgs
 }:
 
 module:
 
-let systemDefault = {
+let inputsWithPkgs = inputs // { inherit pkgs; };
+
+    systemDefault = {
       config.system = pkgs.lib.mkDefault system;
     };
 
     argsFromConfig = { config, ... }: {
       _module.args.system = pkgs.lib.mkDefault config.system;
-      _module.args.pkgs = pkgs.lib.mkDefault
-        (import config.inputs.nixpkgs { inherit (config) system; });
+      _module.args.pkgs = pkgs.lib.mkDefault config.inputs.pkgs;
       # The project's own config, which a driver mirror replaces with the
       # enclosing project when it re-imports modules/common for itself.
       _module.args.topConfig = pkgs.lib.mkDefault config;
     };
 
     inputDefaults = { lib, ... }: {
-      config.inputs = lib.mapAttrs (_: lib.mkDefault) inputs;
+      config.inputs = lib.mapAttrs (_: lib.mkDefault) inputsWithPkgs;
     };
 
     # One store copy of the repository, filtered to libs/ and modules/.

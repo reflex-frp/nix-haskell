@@ -13,7 +13,7 @@ in {
 
   source-repository-packages = {
     reflex-dom = {
-      src = ./deps/reflex-dom;
+      src = config.inputs.reflex-dom;
       subdir = [ "reflex-dom" "reflex-dom-core" ];
     };
   };

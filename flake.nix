@@ -14,18 +14,20 @@
   };
 
   outputs = inputs@{ self, ... }:
-    let nixpkgs =
-          if inputs ? "nixpkgs"
-          then inputs.nixpkgs
-          else builtins.getFlake "nixpkgs";
+    let sources = import ./inputs.nix { overrides = inputs; };
 
-        eachSystem = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed;
+        lib = import "${sources.nixpkgs}/lib";
 
-        pkgsFor = system: import nixpkgs { inherit system; };
+        eachSystem = lib.genAttrs lib.systems.flakeExposed;
+
+        inputsFor = system: import ./inputs.nix {
+          inherit system;
+          overrides = inputs;
+        };
 
         nix-haskellFor = system: import ./default.nix {
-          inherit system inputs;
-          pkgs = pkgsFor system;
+          inherit system;
+          inputs = inputsFor system;
         };
     in {
       lib = eachSystem (system:
@@ -34,7 +36,7 @@
             attrAsFunction = name: _: module: (nix-haskell module).${name};
         in {
           inherit nix-haskell;
-        } // nixpkgs.lib.mapAttrs attrAsFunction emptyProject
+        } // lib.mapAttrs attrAsFunction emptyProject
       );
 
       packages = eachSystem (system:
@@ -51,13 +53,16 @@
       # It therefore stays out of `checks`, which are the repo's own and
       # quick.
       legacyPackages = eachSystem (system: {
-        release = import ./release.nix { inherit system inputs; };
+        release = import ./release.nix {
+          inherit system;
+          inputs = inputsFor system;
+        };
       });
 
       checks = eachSystem (system:
         import ./tests {
-          inherit system inputs;
-          pkgs = pkgsFor system;
+          inherit system;
+          inputs = inputsFor system;
         }
       );
     };

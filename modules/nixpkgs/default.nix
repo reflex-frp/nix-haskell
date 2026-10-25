@@ -41,7 +41,7 @@ let cfg = config.nixpkgs;
 
     crossSetFor = platform: import ../../libs/nixpkgs/cross-pkgs.nix {
       inherit lib platform;
-      nixpkgs = config.inputs.nixpkgs;
+      pkgs = cfg.pkgs;
       system = cfg.system;
       compiler = compilers.resolve platform;
       defaults = cfg.options.cross-package-defaults;
@@ -57,11 +57,11 @@ in {
       pkgs = mkOption {
         type = types.raw;
         default = pkgs;
-        defaultText = fenced-code ''import config.inputs.nixpkgs { inherit (config) system; }'';
+        defaultText = fenced-code ''config.inputs.pkgs'';
         description = ''
           The nixpkgs package set the driver builds with.
         '';
-        example = fenced-code ''import config.inputs.nixpkgs { inherit (config) system; overlays = [ my-overlay ]; }'';
+        example = fenced-code ''config.inputs.pkgs.appendOverlays [ my-overlay ]'';
       };
 
       default-compiler = mkOption {

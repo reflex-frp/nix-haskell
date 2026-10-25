@@ -6,7 +6,9 @@
 with lib;
 with (import ../../libs/prelude { inherit lib; });
 
-{
+let haskellNixArgs = config."haskell-nix".input.nixpkgsArgs;
+
+in {
 
   input = mkOption {
     type = types.raw;
@@ -34,12 +36,19 @@ with (import ../../libs/prelude { inherit lib; });
 
   nixpkgsArgs = mkOption {
     type = types.raw;
-    default = config."haskell-nix".input.nixpkgsArgs;
-    defaultText = fenced-code ''config."haskell-nix".input.nixpkgsArgs'';
+    default = haskellNixArgs // {
+      overlays = haskellNixArgs.overlays ++ config.inputs.pkgs.overlays;
+    };
+    defaultText = fenced-code ''
+      config."haskell-nix".input.nixpkgsArgs // {
+        overlays = config."haskell-nix".input.nixpkgsArgs.overlays ++ config.inputs.pkgs.overlays;
+      }
+    '';
     description = ''
       The arguments the driver imports nixpkgs with: haskell.nix's own
-      overlays, which put `haskell-nix` into the package set, and the
-      configuration its compilers are built under.
+      overlays, which put `haskell-nix` into the package set, then the
+      overlays of `inputs.pkgs`, and the configuration its compilers are
+      built under.
     '';
   };
 

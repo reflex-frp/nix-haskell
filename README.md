@@ -746,9 +746,9 @@ checks and stays quick.
 
 ### Inputs
 
-Dependencies live under `inputs`, one entry per pin in `pins/`. An entry
-accepts whatever a flake input can be: a flake input, a store path, a checkout,
-or a packed thunk.
+Dependencies live under `inputs`, one entry per source, plus `pkgs`, the
+package set every driver builds with. A source accepts whatever a flake input
+can be: a flake input, a store path, a checkout, or a packed thunk.
 
 ```nix
 {
@@ -757,12 +757,19 @@ or a packed thunk.
 }
 ```
 
-The pins in `pins/` supply `nixpkgs`, `haskell-nix`, `ghc-wasm-meta` and
-`sandstone`. Add entries of your own freely. They resolve the same way.
+nix-haskell's `inputs.nix` supplies `nixpkgs`, `haskell-nix`, `ghc-wasm-meta`,
+`sandstone` and `pkgs`. Add entries of your own freely. They resolve the same way.
+Setting `inputs.nixpkgs` rebuilds `pkgs` from that source, with the overlays
+and config of the `pkgs` it replaces.
 
-Flake inputs arrive without any wiring, so `inputs.nixpkgs` follows the
-consuming flake's `nixpkgs`. Precedence runs
-`pins/` < flake inputs < whatever you set explicitly.
+A project's own `inputs.nix` builds its inputs for flake and non-flake use
+alike. `flake.nix` passes its flake inputs as `overrides`. Precedence, lowest first:
+
+1. nix-haskell's `inputs.nix`
+2. the project's `flake.lock`
+3. the project's thunks
+4. `overrides`, such as flake inputs
+5. whatever a module sets explicitly
 
 
 ### Migration from the single-driver layout
@@ -788,7 +795,7 @@ was introduced:
 ### Full example
 
 ```nix
-{ config, nix-haskell-patches, ... }:
+{ config, nix-haskell-libs, nix-haskell-patches, ... }:
 
 {
   imports = [
@@ -800,15 +807,14 @@ was introduced:
 
   source-repository-packages = {
     reflex-dom = {
-      src = ./deps/reflex-dom;
+      src = config.inputs.reflex-dom;
       subdir = [ "reflex-dom" "reflex-dom-core" ];
     };
   };
 
   nixpkgs = {
     # webkitgtk (via jsaddle-webkit2gtk) still links libsoup 2
-    pkgs = import config.inputs.nixpkgs {
-      inherit (config) system;
+    pkgs = import "${nix-haskell-libs}/nixpkgs/reimport.nix" config.inputs.pkgs {
       config.permittedInsecurePackages = [ "libsoup-2.74.3" ];
     };
     options.overrides = [

@@ -2,7 +2,7 @@
 #   nix-build -A nixpkgs.packages.hello
 #   nix-build -A haskell-nix.hsPkgs.hello.components.exes.hello
 { system ? builtins.currentSystem
-, inputs ? import ../../inputs.nix
+, inputs ? import ../../inputs.nix { inherit system; }
 }:
 
 let nix-haskell = import ../../default.nix { inherit system inputs; };
