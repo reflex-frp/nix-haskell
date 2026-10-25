@@ -42,7 +42,7 @@ let pkgs = (import ./default.nix { inherit system inputs; } {}).pkgs;
       checks = import ./tests { inherit system inputs; };
 
       reflex-todomvc = import ./examples/reflex-todomvc/release.nix {
-        inherit system inputs;
+        inherit system;
       };
 
       # The tool and the wrapper build anywhere. The libraries read
