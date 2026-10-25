@@ -72,7 +72,9 @@ in {
 
       cross-wrappers.via = "called with the wrapped cross compiler of every selected platform; the scripts join the shell's `nativeBuildInputs`";
 
-      inputs.via = "`inputs.nixpkgs` supplies the package set; `inputs.haskell-nix` supplies the reused parsers";
+      inputs.via = "`inputs.pkgs` supplies the package set; `inputs.haskell-nix` supplies the reused parsers";
+
+      overlays.via = "each overlay changes the config in its own evaluation pass, before the driver reads it";
 
     } // packageFields.vias
       // translations.common-vias {

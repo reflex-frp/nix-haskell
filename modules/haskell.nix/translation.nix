@@ -278,6 +278,8 @@ in {
 
       inputs.via = "`inputs.haskell-nix` supplies the haskell.nix checkout the driver imports";
 
+      overlays.via = "each overlay changes the config in its own evaluation pass, before the driver reads it";
+
     } // packagesTranslation
       // translations.common-vias {
         namespace = "haskell-nix";
