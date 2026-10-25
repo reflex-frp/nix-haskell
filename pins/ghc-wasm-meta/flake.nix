@@ -4,7 +4,7 @@
     "upstream" = {
       owner = "haskell-wasm";
       repo = "ghc-wasm-meta";
-      rev = "5b96779e3d356b3962b6e9c85a9db3a1fcc31ed1";
+      rev = "8079eb96bbc63823d99ad8acaff0765532625474";
       type = "github";
       inputs = {
         "flake-utils" = { follows = "flake-utils"; };
@@ -22,10 +22,10 @@
       };
     };
     "nixpkgs" = {
-      narHash = "sha256-rdJdWxAcg5fnntU4DjPivPdVEN4F+VJavw+UWpEMeUI=";
+      narHash = "sha256-cy5PsNucfXU5+KtLR+S9/zdkWOUplhL5Xr0LQWhSYbs=";
       owner = "NixOS";
       repo = "nixpkgs";
-      rev = "329c3d2af6d1b618705150ea39f72c15eb4e613e";
+      rev = "2bd3427b41d10b8318383195efe502ed1baca6cd";
       type = "github";
     };
     "systems" = {
