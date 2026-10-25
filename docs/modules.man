@@ -3270,12 +3270,15 @@ This option has no description.
 /modules/haskell.nix
 .UE \c
 .SS haskell\-nix.options.evalPackages
-Packages used to run \f[CR]cabal\f[R] and \f[CR]nix\-tools\f[R].
-This will default to \f[CR]pkgs.pkgsBuildBuild\f[R] if it matches the
-\f[CR]evalSystem\f[R] (or if \f[CR]evalSystem\f[R] was not specified).
-If a different \f[CR]evalSystem\f[R] was requested,
-\f[CR]evalPackages\f[R] will default to be: import pkgs.path { system =
-config.evalSystem; overlays = pkgs.overlays; };
+Packages used to run \f[CR]cabal\f[R] and \f[CR]nix\-tools\f[R], derived
+from \f[CR]evalSystem\f[R] via the memoised
+\f[CR]haskell\-nix.evalPackages\f[R] attrset.
+Defaults to \f[CR]pkgs.pkgsBuildBuild\f[R] when \f[CR]evalSystem\f[R]
+matches the \f[CR]pkgsBuildBuild\f[R] system (the common case),
+otherwise a shared nixpkgs imported for \f[CR]evalSystem\f[R] from the
+same path and overlays.
+Select the eval platform with \f[CR]evalSystem\f[R] rather than setting
+this directly; setting it is deprecated and gives a warning.
 .PP
 \f[I]Type:\f[R] attribute set
 .PP
@@ -3559,6 +3562,33 @@ null
 .UR file://%3Cnix-haskell%3E/modules/haskell.nix
 /modules/haskell.nix
 .UE \c
+.SS haskell\-nix.options.injectStableHaskellBootPackages
+Inject the stable\-haskell GHC\(cqs boot package sources
+(source\-repository\-package on the configured GHC tree, exact version
+pins for the hackage\-resolved boot deps, and the stage3\-style project
+configuration) into the project\(cqs cabal.project, so cabal plans and
+builds rts, base, \&...
+from source alongside the project\(cqs own packages.
+.PP
+\f[CR]null\f[R] (the default) auto\-detects: the injection is applied
+exactly when the selected compiler is a stable\-haskell
+\f[CR]\-target\f[R] cross wrapper
+(\f[CR]passthru.emptyGlobalPackageDb\f[R]), whose global package db
+ships no boot libraries.
+See \f[CR]modules/cabal\-project.nix\f[R] for the wiring.
+.PP
+\f[I]Type:\f[R] null or boolean
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+null
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/haskell.nix
+/modules/haskell.nix
+.UE \c
 .SS haskell\-nix.options.inputMap
 Specifies the contents of urls in the cabal.project file.
 For a \f[CR]source\-repository\-packages\f[R] stanza, haskell.nix checks
@@ -3683,6 +3713,34 @@ See Note [prebuilt dependencies] for more details
 .IP
 .EX
 [ ]
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/haskell.nix
+/modules/haskell.nix
+.UE \c
+.SS haskell\-nix.options.prepopulateHackageIndex
+Whether to prepopulate the full Hackage index (\(ti1.2 GB, truncated to
+the project\(cqs \f[CR]index\-state\f[R]) into the \f[CR]CABAL_DIR\f[R]
+used for plan\-to\-nix.
+.PP
+cabal parses this index at startup on every invocation \(em even with
+\f[CR]active\-repositories: :none\f[R] \(em so for projects that resolve
+nothing from Hackage (every dependency pinned as a local package or
+source\-repository\-package, e.g.
+via \f[CR]replace\-hackage\-tarball\-urls\f[R]), the full index is a
+large, needless cost (seconds natively, minutes under emulation).
+Set this false for such projects to prepopulate an empty index instead,
+which cabal loads instantly.
+Leave true (the default) for normal projects that resolve dependencies
+from Hackage.
+.PP
+\f[I]Type:\f[R] boolean
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+true
 .EE
 .PP
 \f[I]Declared by:\f[R] \- \c
@@ -4108,6 +4166,87 @@ false
 .UR file://%3Cnix-haskell%3E/modules/haskell.nix
 /modules/haskell.nix
 .UE \c
+.SS haskell\-nix.options.v2LocalPackageSliceNames
+Package names whose LIBRARY slices are built in cabal
+\f[CR]packages:\f[R] mode, as \f[CR]v2LocalPackageSlices\f[R] does for
+every local unit, but without that option\(cqs other project\-wide
+effects (the solver\(cqs view of the compiler\(cqs global db).
+Set by the stable\-haskell boot injection for \f[CR]ghc\f[R], whose unit
+id GHC itself hard\-codes.
+Only meaningful with \f[CR]builderVersion = 2\f[R].
+.PP
+\f[I]Type:\f[R] list of string
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+[ ]
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/haskell.nix
+/modules/haskell.nix
+.UE \c
+.SS haskell\-nix.options.v2LocalPackageSlices
+Build v2 slices for \f[CR]style: \(dqlocal\(dq\f[R] plan units in cabal
+\f[CR]packages:\f[R] mode instead of \f[CR]extra\-packages:\f[R] mode,
+so each slice\(cqs cabal elaborates \(em and REGISTERS \(em the same
+deterministic local unit id the project plan records
+(\f[CR]base\-4.22.0.0\f[R], \f[CR]rts\-1.0.3\-threaded\-nodebug\f[R],
+\&...), and the slice/plan unit\-id equality check is enforced for them.
+.PP
+Set by the stable\-haskell stage2 boot\-library project: its slices\(cq
+registered ids become the compiler\(cqs global package db, which
+consumer projects\(cq plan\-time dummy \f[CR]ghc\-pkg dump\f[R] must be
+able to predict (an \f[CR]extra\-packages:\f[R] slice registers an
+unpredictable hashed id instead).
+Only meaningful with \f[CR]builderVersion = 2\f[R].
+.PP
+\f[I]Type:\f[R] boolean
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+false
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/haskell.nix
+/modules/haskell.nix
+.UE \c
+.SS haskell\-nix.options.withBuildCompiler
+Pass a \f[I]build\f[R]\-platform dummy \f[CR]ghc\f[R] +
+\f[CR]ghc\-pkg\f[R] to \f[CR]make\-install\-plan\f[R] during
+plan\-to\-nix, via \f[CR]\-\-with\-build\-compiler\f[R] /
+\f[CR]\-\-with\-build\-hc\-pkg\f[R] (the stable\-haskell cabal fork\(cqs
+cross \(lqstage\(rq system, haskell/cabal#11179).
+.PP
+The build dummy\(cqs \f[CR]ghc \-\-info\f[R] reports the build (native)
+platform and its \f[CR]ghc\-pkg dump \-\-global\f[R] lists the build
+boot libraries (especially \f[CR]ghc\-internal\f[R]) as installed.
+That satisfies a source project\(cqs
+\f[CR]constraints: build:any.ghc\-internal installed\f[R] and lets cabal
+resolve build\-tool\-depends (e.g.
+\f[CR]hsc2hs\f[R]) in the build scope, reusing the installed
+build\-stage \f[CR]process\f[R]/\f[CR]base\f[R] rather than rebuilding
+them \(em breaking cross build\-tool cycles (e.g.
+the Windows \f[CR]Win32 \-> hsc2hs \-> process \-> Win32\f[R] cycle)
+without the full Hackage index.
+Off by default; projects that don\(cqt set it get no
+\f[CR]\-\-with\-build\-compiler\f[R] (unchanged behaviour).
+.PP
+\f[I]Type:\f[R] boolean
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+false
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/haskell.nix
+/modules/haskell.nix
+.UE \c
 .SS haskell\-nix.overrides
 haskell.nix \f[CR]modules\f[R] to add to the project.
 Use it for anything the common options do not cover.
@@ -4155,7 +4294,8 @@ final ones only by that restore.
 \f[I]Default:\f[R]
 .IP
 .EX
-config.haskell\-nix.haskell\-nix.project config.haskell\-nix.options
+config.haskell\-nix.haskell\-nix.project
+  (the haskell\-nix.options that are set, each with its own priority)
 .EE
 .PP
 \f[I]Declared by:\f[R] \- \c
@@ -5674,6 +5814,30 @@ false
 \f[I]Declared by:\f[R] \- \c
 .UR file://%3Cnix-haskell%3E/modules/optimizations.nix
 /modules/optimizations.nix
+.UE \c
+.SS overlays
+Overlays on the whole config, \f[CR]final: prev:\f[R], each returning
+option values to merge in.
+Each gets its own evaluation pass and lands one priority above the
+definition that won before it.
+.PP
+\f[I]Type:\f[R] list of (overlay function)
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+[ ]
+.EE
+.PP
+\f[I]Example:\f[R]
+.IP
+.EX
+[ (final: prev: { inputs.pkgs = prev.inputs.pkgs.appendOverlays [ my\-overlay ]; }) ]
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/overlays.nix
+/modules/overlays.nix
 .UE \c
 .SS platforms
 Per\-platform customization, keyed by \f[CR]pkgs.pkgsCross\f[R] platform

@@ -36,6 +36,14 @@ let cfg = config."haskell-nix";
 
     srpStanzaLines = cfg.stages.source-repository-packages.cabalProject;
 
+    optionDefaultPriority = (mkOptionDefault null).priority;
+
+    projectOptions = filterAttrs (_: isOption) options."haskell-nix".options.valueMeta.configuration.options;
+
+    setProjectOptions = filterAttrs (_: option: option.highestPrio < optionDefaultPriority) projectOptions;
+
+    projectDefinitions = mapAttrs (_: option: mkOverride option.highestPrio option.value) setProjectOptions;
+
     # haskell.nix builds shell tools in their own projects, keyed only by
     # `compiler-nix-name` (default selection: `haskell-nix.compiler.<name>`).
     # A compiler package's own name is generally absent there, so the driver
@@ -91,7 +99,7 @@ in {
       };
 
       project = mkOption {
-        default = config.haskell-nix.haskell-nix.project config.haskell-nix.options;
+        default = config.haskell-nix.haskell-nix.project projectDefinitions;
         # `apply` rather than the default, so an overridden project passes
         # through the same wraps.
         apply = p:
@@ -115,7 +123,10 @@ in {
                 withHoogle = old.withHoogle or cfg.shell.withHoogle;
               });
           in wrapped // { shell = shellWithHooks; };
-        defaultText = fenced-code ''config.haskell-nix.haskell-nix.project config.haskell-nix.options'';
+        defaultText = fenced-code ''
+          config.haskell-nix.haskell-nix.project
+            (the haskell-nix.options that are set, each with its own priority)
+        '';
         description = ''
           The built project as haskell.nix returns it: `hsPkgs`, `shell`,
           `projectCross` per cross platform, `plan-nix`, and the rest. A

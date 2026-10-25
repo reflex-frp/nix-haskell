@@ -273,6 +273,8 @@ null
 
 ## packages\.\<name>\.closure-compiler\.externs
 
+
+
 Files passed as ` --externs `\. They declare what the program reaches by
 a name the compiler must not rename\. The jsexe’s own ` all.externs.js `
 always goes ahead of these, since ADVANCED renames everything it is
@@ -4593,16 +4595,13 @@ unspecified value
 
 
 
-Packages used to run ` cabal ` and ` nix-tools `\.
-This will default to ` pkgs.pkgsBuildBuild ` if it
-matches the ` evalSystem ` (or if ` evalSystem ` was
-not specified)\.
-If a different ` evalSystem ` was requested, ` evalPackages ` will
-default to be:
-import pkgs\.path {
-system = config\.evalSystem;
-overlays = pkgs\.overlays;
-};
+Packages used to run ` cabal ` and ` nix-tools `, derived from
+` evalSystem ` via the memoised ` haskell-nix.evalPackages ` attrset\.
+Defaults to ` pkgs.pkgsBuildBuild ` when ` evalSystem ` matches the
+` pkgsBuildBuild ` system (the common case), otherwise a shared
+nixpkgs imported for ` evalSystem ` from the same path and overlays\.
+Select the eval platform with ` evalSystem ` rather than setting this
+directly; setting it is deprecated and gives a warning\.
 
 
 
@@ -5028,6 +5027,41 @@ null
 
 
 
+## haskell-nix\.options\.injectStableHaskellBootPackages
+
+
+
+Inject the stable-haskell GHC’s boot package sources
+(source-repository-package on the configured GHC tree, exact
+version pins for the hackage-resolved boot deps, and the
+stage3-style project configuration) into the project’s
+cabal\.project, so cabal plans and builds rts, base, … from
+source alongside the project’s own packages\.
+
+` null ` (the default) auto-detects: the injection is applied
+exactly when the selected compiler is a stable-haskell
+` -target ` cross wrapper (` passthru.emptyGlobalPackageDb `),
+whose global package db ships no boot libraries\.  See
+` modules/cabal-project.nix ` for the wiring\.
+
+
+
+*Type:*
+null or boolean
+
+
+
+*Default:*
+
+```nix
+null
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/haskell\.nix](file://<nix-haskell>/modules/haskell.nix)
+
+
+
 ## haskell-nix\.options\.inputMap
 
 
@@ -5221,6 +5255,40 @@ list of package
 
 ```nix
 [ ]
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/haskell\.nix](file://<nix-haskell>/modules/haskell.nix)
+
+
+
+## haskell-nix\.options\.prepopulateHackageIndex
+
+
+
+Whether to prepopulate the full Hackage index (~1\.2 GB, truncated to the
+project’s ` index-state `) into the ` CABAL_DIR ` used for plan-to-nix\.
+
+cabal parses this index at startup on every invocation — even with
+` active-repositories: :none ` — so for projects that resolve nothing from
+Hackage (every dependency pinned as a local package or
+source-repository-package, e\.g\. via ` replace-hackage-tarball-urls `), the
+full index is a large, needless cost (seconds natively, minutes under
+emulation)\.  Set this false for such projects to prepopulate an empty
+index instead, which cabal loads instantly\.  Leave true (the default)
+for normal projects that resolve dependencies from Hackage\.
+
+
+
+*Type:*
+boolean
+
+
+
+*Default:*
+
+```nix
+true
 ```
 
 *Declared by:*
@@ -5864,6 +5932,109 @@ false
 
 
 
+## haskell-nix\.options\.v2LocalPackageSliceNames
+
+
+
+Package names whose LIBRARY slices are built in cabal ` packages: `
+mode, as ` v2LocalPackageSlices ` does for every local unit, but
+without that option’s other project-wide effects (the solver’s
+view of the compiler’s global db)\.  Set by the stable-haskell
+boot injection for ` ghc `, whose unit id GHC itself hard-codes\.
+Only meaningful with ` builderVersion = 2 `\.
+
+
+
+*Type:*
+list of string
+
+
+
+*Default:*
+
+```nix
+[ ]
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/haskell\.nix](file://<nix-haskell>/modules/haskell.nix)
+
+
+
+## haskell-nix\.options\.v2LocalPackageSlices
+
+
+
+Build v2 slices for ` style: "local" ` plan units in cabal
+` packages: ` mode instead of ` extra-packages: ` mode, so each
+slice’s cabal elaborates — and REGISTERS — the same
+deterministic local unit id the project plan records
+(` base-4.22.0.0 `, ` rts-1.0.3-threaded-nodebug `, …), and the
+slice/plan unit-id equality check is enforced for them\.
+
+Set by the stable-haskell stage2 boot-library project: its
+slices’ registered ids become the compiler’s global package db,
+which consumer projects’ plan-time dummy ` ghc-pkg dump ` must be
+able to predict (an ` extra-packages: ` slice registers an
+unpredictable hashed id instead)\.  Only meaningful with
+` builderVersion = 2 `\.
+
+
+
+*Type:*
+boolean
+
+
+
+*Default:*
+
+```nix
+false
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/haskell\.nix](file://<nix-haskell>/modules/haskell.nix)
+
+
+
+## haskell-nix\.options\.withBuildCompiler
+
+
+
+Pass a *build*-platform dummy ` ghc ` + ` ghc-pkg ` to ` make-install-plan `
+during plan-to-nix, via ` --with-build-compiler ` / ` --with-build-hc-pkg `
+(the stable-haskell cabal fork’s cross “stage” system,
+haskell/cabal\#11179)\.
+
+The build dummy’s ` ghc --info ` reports the build (native) platform and
+its ` ghc-pkg dump --global ` lists the build boot libraries (especially
+` ghc-internal `) as installed\.  That satisfies a source project’s
+` constraints: build:any.ghc-internal installed ` and lets cabal resolve
+build-tool-depends (e\.g\. ` hsc2hs `) in the build scope, reusing the
+installed build-stage ` process `/` base ` rather than rebuilding them —
+breaking cross build-tool cycles (e\.g\. the Windows
+` Win32 -> hsc2hs -> process -> Win32 ` cycle) without the full Hackage
+index\.  Off by default; projects that don’t set it get no
+` --with-build-compiler ` (unchanged behaviour)\.
+
+
+
+*Type:*
+boolean
+
+
+
+*Default:*
+
+```nix
+false
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/haskell\.nix](file://<nix-haskell>/modules/haskell.nix)
+
+
+
 ## haskell-nix\.overrides
 
 
@@ -5926,7 +6097,8 @@ raw value
 *Default:*
 
 ```
-config.haskell-nix.haskell-nix.project config.haskell-nix.options
+config.haskell-nix.haskell-nix.project
+  (the haskell-nix.options that are set, each with its own priority)
 ```
 
 *Declared by:*
@@ -7918,8 +8090,6 @@ false
 
 ## optimizations\.specialise
 
-
-
 Enable -fspecialise: specialise each overloaded function for the
 types at which the defining module calls it\.
 
@@ -7964,6 +8134,40 @@ false
 
 *Declared by:*
  - [<nix-haskell>/modules/optimizations\.nix](file://<nix-haskell>/modules/optimizations.nix)
+
+
+
+## overlays
+
+
+
+Overlays on the whole config, ` final: prev: `, each returning
+option values to merge in\. Each gets its own evaluation pass and
+lands one priority above the definition that won before it\.
+
+
+
+*Type:*
+list of (overlay function)
+
+
+
+*Default:*
+
+```nix
+[ ]
+```
+
+
+
+*Example:*
+
+```
+[ (final: prev: { inputs.pkgs = prev.inputs.pkgs.appendOverlays [ my-overlay ]; }) ]
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/overlays\.nix](file://<nix-haskell>/modules/overlays.nix)
 
 
 
@@ -8179,8 +8383,6 @@ null
 
 
 ## platforms\.\<name>\.packages\.\<name>\.enableShared
-
-
 
 Whether to build a shared library\. ` null ` leaves the default in place\.
 
@@ -9219,6 +9421,8 @@ list of absolute path
 
 
 ## platforms\.\<name>\.packages\.\<name>\.postBuild
+
+
 
 Shell code run after the
 build phase\. ` null ` leaves the default in
