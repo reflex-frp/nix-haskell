@@ -4,7 +4,7 @@
     "upstream" = {
       owner = "NixOS";
       repo = "nixpkgs";
-      rev = "da6dc0e7b26060f2f71ce3ef7088fb56ee44fa36";
+      rev = "6f06d204d8f2d8761d9da78778745974a3216381";
       type = "github";
     };
   };
