@@ -269,7 +269,11 @@ in {
       "shell.nativeBuildInputs".via = "`shell.nativeBuildInputs`";
 
       "shell.shellHook".via = "appended to the project shell with overrideAttrs, deferring its evaluation";
-      "shell.withHoogle".via = "applied to the project shell with overrideAttrs, deferring its evaluation";
+      "shell.withHoogle".set = {
+        shell.withHoogle = false;
+        shell.withHaddock = cfg.shell.withHoogle;
+      };
+      "shell.withHoogle".via = "haskell.nix builds the documentation; nixpkgs' hoogle builds the index over the shell's package database";
 
       "shell.crossPlatforms".set = { shell.crossPlatforms = cfg.shell.crossPlatforms; };
       "shell.crossPlatforms".via = "`shell.crossPlatforms` (haskell.nix cross projects are keyed by the same `pkgsCross` names)";

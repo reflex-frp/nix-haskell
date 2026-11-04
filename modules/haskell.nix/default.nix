@@ -118,9 +118,15 @@ in {
                      in q.hsPkgs // q
                 else p;
 
+              # nixpkgs' hoogle builds the index, so hoogle never builds
+              # with the project's compiler.
+              hoogleIndex = import ../../libs/haskell-nix/hoogle-index.nix { pkgs = cfg.nixpkgs; } {
+                ghc = wrapped.shell.ghc;
+              };
+
               shellWithHooks = wrapped.shell.overrideAttrs (old: {
                 shellHook = old.shellHook + cfg.shell.shellHook;
-                withHoogle = old.withHoogle or cfg.shell.withHoogle;
+                nativeBuildInputs = old.nativeBuildInputs ++ optional cfg.shell.withHoogle hoogleIndex;
               });
           in wrapped // { shell = shellWithHooks; };
         defaultText = fenced-code ''
@@ -168,29 +174,6 @@ in {
         ]
         ++ map (t: mkIf (t.set != null) t.set) (attrValues cfg.translation)
       );
-    }
-
-    {
-      # The hoogle version haskell.nix can build against ghc 9.14. This
-      # definition lands past `shell.tools`, so it re-applies the
-      # tool-compiler pin.
-      haskell-nix.options.shell.tools.hoogle = mkDefault (withToolCompiler {
-        version = "5.0.19.0";
-        cabalProjectLocal = ''
-          if impl(ghc == 9.14.*)
-            allow-newer:
-                *:base
-              , *:template-haskell
-              , *:ghc-experimental
-              , *:ghc-internal
-              , *:containers
-            constraints:
-                base < 4.23
-              , template-haskell < 2.25
-              , ghc-experimental < 9.1500
-              , ghc-internal < 9.1500
-        '';
-      });
     }
 
     {
