@@ -2,6 +2,55 @@
 
 ## Unreleased
 
+### Added
+
+- `overlays`, overlays on the whole config (`final: prev:`). Each overlay
+  gets its own evaluation pass. Both drivers honor it.
+- `inputs.pkgs`, the package set every driver builds with. `inputs.nix`
+  builds it. Setting `inputs.nixpkgs` rebuilds it from that source, with the
+  same overlays and config.
+- `libs/common`, one attribute set of the shared helpers:
+  `with (import "${nix-haskell-libs}/common" {});`. It holds the prelude,
+  `message-prefix`, `patch-module`, `build-phases`,
+  `local-packages-selection`, `thunk`, `thunks`, and `paths`, the files that
+  nix-haskell imports from inside its inputs.
+- The checks `upstream-paths`, which fails when an input no longer has a
+  file in `paths`, and `condition-spec`.
+
+### Changed
+
+- For a compiler the project supplies, the haskell.nix driver also copies
+  every boot package that the copied boot packages need in the compiler's
+  database. `compiler.haskell-nix.extraNonReinstallablePkgs` now names only
+  a package that only a package from the plan needs. The ghc-wasm-meta
+  module names only `system-cxx-std-lib`.
+- nixpkgs' hoogle builds the haskell.nix shell's hoogle index. The shell no
+  longer builds hoogle with the project's compiler, and no longer pins
+  hoogle 5.0.19.0 for GHC 9.14.
+- `haskell-nix.options` passes haskell.nix only the options that are set,
+  each with its own priority.
+- The nixpkgs driver answers the `impl(ghc ..)` conditions of
+  `source-repository-packages` from `compiler-version`. `flag(..)` and any
+  other `impl(..)` still hold, with a warning.
+- The manual shows haskell.nix's own `inputMap` description without its
+  `# FIXME` line, and a short default for `evalPackages`.
+- The ghc-wasm-meta module makes the bindist's `ghc --info` report the
+  `ghc-internal` id of its own database, which cabal 3.18 checks.
+- Pins: haskell.nix `e39eab3`, nixpkgs `7dcdd87` (nixos-26.05),
+  ghc-wasm-meta `8079eb96`.
+
+### Changed (breaking)
+
+- `message-prefix.nix`, `patch-module.nix` and `build-phases.nix` moved from
+  `libs/` into `libs/common/`. `shell-packages-selection.nix` is now
+  `libs/common/local-packages-selection.nix`.
+- `libs/nixpkgs/project-file.nix` no longer takes a `parser` argument.
+
+### Fixed
+
+- `shell.withHoogle = false` had no effect in the haskell.nix driver. Its
+  shell built hoogle and the documentation anyway.
+
 ## Release 1.0
 
 ### Added
