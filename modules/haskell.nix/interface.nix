@@ -4,7 +4,7 @@
 { lib, cfg, compiler }:
 
 with lib;
-with (import ../../libs/prelude { inherit lib; });
+with (import ../../libs/common { inherit lib; });
 
 {
 

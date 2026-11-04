@@ -3,7 +3,7 @@
 { lib, packageFields, bundleOptimizerLayer, bundleOptimizersOption }:
 
 with lib;
-with (import ../../libs/prelude { inherit lib; });
+with (import ../../libs/common { inherit lib; });
 
 {
 

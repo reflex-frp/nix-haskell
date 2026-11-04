@@ -21,7 +21,7 @@ target:
 { config, lib, pkgs, ... }:
 
 with lib;
-with (import ../prelude { inherit lib; });
+with (import ../common { inherit lib; });
 
 let rows = import ./targets.nix { inherit lib; };
 
@@ -29,7 +29,7 @@ let rows = import ./targets.nix { inherit lib; };
     # The row
     # ------------------------------------------------------------------------
 
-    unknownTarget = throw ((import ../message-prefix.nix {}) "no cross target named \"${target}\"");
+    unknownTarget = throw ((message-prefix {}) "no cross target named \"${target}\"");
 
     given =
       if builtins.isString target

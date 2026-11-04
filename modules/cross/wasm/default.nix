@@ -12,7 +12,7 @@
 { config, lib, pkgs, ... }:
 
 with lib;
-with (import ../../../libs/prelude { inherit lib; });
+with (import ../../../libs/common { inherit lib; });
 
 {
 

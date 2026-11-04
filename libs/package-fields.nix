@@ -22,9 +22,9 @@
 { lib }:
 
 with lib;
-with (import ./prelude { inherit lib; });
+with (import ./common { inherit lib; });
 
-let buildPhases = import ./build-phases.nix { inherit lib; };
+let buildPhases = build-phases;
 
     # ------------------------------------------------------------------------
     # Generators

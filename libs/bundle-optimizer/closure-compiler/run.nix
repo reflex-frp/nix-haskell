@@ -35,7 +35,7 @@
 #                                                # same layout either way
 { pkgs, lib }:
 
-with (import ../../prelude { inherit lib; });
+with (import ../../common { inherit lib; });
 
 { jsexe, enable, level, externs, extraFlags }:
 

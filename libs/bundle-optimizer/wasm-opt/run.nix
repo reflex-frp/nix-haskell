@@ -26,7 +26,7 @@
 #                                              # the same path either way
 { pkgs, lib }:
 
-with (import ../../prelude { inherit lib; });
+with (import ../../common { inherit lib; });
 
 { wasm, enable, level, extraFlags }:
 

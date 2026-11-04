@@ -3274,17 +3274,8 @@ this directly; setting it is deprecated and gives a warning.
 .PP
 \f[I]Type:\f[R] attribute set
 .PP
-\f[I]Default:\f[R]
-.IP
-.EX
-if pkgs.pkgsBuildBuild.stdenv.system == config.evalSystem
-then pkgs.pkgsBuildBuild
-else
-  import pkgs.path {
-    system = config.evalSystem;
-    overlays = pkgs.overlays;
-  };
-.EE
+\f[I]Default:\f[R] haskell.nix\(cqs package set for
+\f[CR]evalSystem\f[R]
 .PP
 \f[I]Declared by:\f[R] \- \c
 .UR file://%3Cnix-haskell%3E/modules/haskell.nix
@@ -3583,12 +3574,11 @@ null
 .UE \c
 .SS haskell\-nix.options.inputMap
 Specifies the contents of urls in the cabal.project file.
-For a \f[CR]source\-repository\-packages\f[R] stanza, haskell.nix checks
-the \f[CR].rev\f[R] attribute against the \f[CR]tag\f[R].
-.PP
-For a \f[CR]revision\f[R] block, it reads \f[CR]inputMap.<url>\f[R], and
-looks up the \f[CR].tar.gz\f[R] file of each named package in the
-\f[CR]inputMap\f[R] as well.
+The \f[CR].rev\f[R] attribute is checked against the \f[CR]tag\f[R] for
+\f[CR]source\-repository\-packages\f[R].
+For \f[CR]revision\f[R] blocks the \f[CR]inputMap.<url>\f[R] will be
+used and they \f[CR].tar.gz\f[R] for the \f[CR]packages\f[R] used will
+also be looked up in the \f[CR]inputMap\f[R].
 .PP
 \f[I]Type:\f[R] null or (attribute set)
 .PP

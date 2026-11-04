@@ -4,7 +4,7 @@
 { lib, cfg }:
 
 with lib;
-with (import ../../libs/prelude { inherit lib; });
+with (import ../../libs/common { inherit lib; });
 
 let flagField = default: description: mkOption {
       type = types.bool;

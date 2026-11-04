@@ -23,7 +23,7 @@
 { lib, options, excludes ? [] }:
 
 with lib;
-with (import ../prelude { inherit lib; });
+with (import ../common { inherit lib; });
 
 let subNames = prefix: opts:
       let visibleOptions = filterAttrs (n: o: n != "_module" && isOption o && is-visible o) opts;

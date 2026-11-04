@@ -1,10 +1,9 @@
-# The `shell.packages` selection a driver offers: the project's own
-# `shell.packages` function when it gave one, else every local package
-# that is not a source-repository-package.
+# A package selection: `packages` when it is a function, else every local
+# package that is not a source-repository-package.
 #
 # Example:
 #
-#   import ./shell-packages-selection.nix {
+#   import ./local-packages-selection.nix {
 #     packages = null;
 #     source-repository-packages = { dep-a = ./deps/dep-a; };
 #   } { hello = { isLocal = true; identifier.name = "hello"; };

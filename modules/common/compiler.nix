@@ -3,7 +3,7 @@
 { lib }:
 
 with lib;
-with (import ../../libs/prelude { inherit lib; });
+with (import ../../libs/common { inherit lib; });
 
 let toolchainTools = import ../../libs/compiler/toolchain-tools.nix;
 

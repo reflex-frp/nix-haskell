@@ -28,12 +28,13 @@
 #   => { name = "frontend"; value = ./monorepo/frontend; }
 { pkgs
 , haskell-nix-src ? null
-, parser ? import (haskell-nix-src + "/lib/cabal-project-parser.nix") { inherit pkgs; }
 }:
 
 with pkgs.lib;
+with (import ../common { inherit (pkgs) lib; });
 
-let prefix = import ../message-prefix.nix { driver = "nixpkgs"; };
+let prefix = message-prefix { driver = "nixpkgs"; };
+    parser = import "${haskell-nix-src}/${paths.haskell-nix.cabal-project-parser}" { inherit pkgs; };
 
     inline-cabal-project = (import ../cabal.nix { inherit pkgs; }).inline-cabal-project;
 

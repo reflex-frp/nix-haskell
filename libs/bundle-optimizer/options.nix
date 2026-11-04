@@ -27,7 +27,7 @@
 { lib, inherits ? null }:
 
 with lib;
-with (import ../prelude { inherit lib; });
+with (import ../common { inherit lib; });
 
 let field = import ./field.nix { inherit lib inherits; };
 

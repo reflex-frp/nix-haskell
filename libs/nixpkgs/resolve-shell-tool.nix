@@ -22,7 +22,9 @@
 
 { name, request, tool-packages, pkgs, haskellPackages }:
 
-let prefix = import ../message-prefix.nix { driver = "nixpkgs"; };
+with (import ../common { inherit lib; });
+
+let prefix = message-prefix { driver = "nixpkgs"; };
 
     sources = [ tool-packages pkgs haskellPackages ];
 

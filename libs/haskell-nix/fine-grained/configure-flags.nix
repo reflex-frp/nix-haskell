@@ -20,9 +20,11 @@
 
 { name, component, ghc, pkgs }:
 
+with (import ../../common { inherit lib; });
+
 let platform = pkgs.stdenv.hostPlatform;
 
-    prefix = import ../../message-prefix.nix { driver = "haskell.nix"; };
+    prefix = message-prefix { driver = "haskell.nix"; };
 
     feature = enabled: flag: "--${if enabled then "enable" else "disable"}-${flag}";
 

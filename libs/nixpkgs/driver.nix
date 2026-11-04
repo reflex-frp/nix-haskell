@@ -40,6 +40,8 @@
 , cross-wrappers
 }:
 
+with (import ../common { inherit lib; });
+
 let compose = pkgs.haskell.lib.compose;
 
     # What the project asked for, with a cross platform's own customization
@@ -53,7 +55,7 @@ let compose = pkgs.haskell.lib.compose;
 
     # Checked once, from the project this driver was asked for, since a name
     # that denotes no platform would otherwise simply never be looked up.
-    prefix = import ../message-prefix.nix { driver = "nixpkgs"; };
+    prefix = message-prefix { driver = "nixpkgs"; };
 
     unknownPlatforms =
       let unknown = lib.subtractLists (builtins.attrNames pkgs.pkgsCross)
@@ -76,7 +78,7 @@ let compose = pkgs.haskell.lib.compose;
     # - else the one nixpkgs assembles for the platform
     crossPkgs = platform: common.pkgsCross.${platform} or pkgs.pkgsCross.${platform};
 
-    hostMap = import (haskell-nix-src + "/lib/host-map.nix") pkgs.stdenv;
+    hostMap = import "${haskell-nix-src}/${paths.haskell-nix.host-map}" pkgs.stdenv;
     project-file = import ./project-file.nix { inherit pkgs haskell-nix-src; };
     conditionHolds = condition: options.evaluate-condition { inherit condition hostMap; };
     decodeSrp = import ../source-repository-package.nix;
@@ -328,7 +330,7 @@ let compose = pkgs.haskell.lib.compose;
       lib.genAttrs generatedNames
         (name: hp.${name} // { isLocal = true; identifier = { inherit name; }; });
 
-    selection = import ../shell-packages-selection.nix {
+    selection = local-packages-selection {
       packages = common.shell.packages;
       inherit (common) source-repository-packages;
     };

@@ -25,7 +25,9 @@
 
 { fine-grained, project, haskellLib, pkgs }:
 
-let prefix = import ../../message-prefix.nix { driver = "haskell.nix"; };
+with (import ../../common { inherit lib; });
+
+let prefix = message-prefix { driver = "haskell.nix"; };
 
     restore-intermediates = import ../restore-intermediates.nix { inherit lib; };
 

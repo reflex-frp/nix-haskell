@@ -45,7 +45,7 @@
 { lib, pkgs, topConfig, topOptions, cfg, driver }:
 
 with lib;
-with (import ../prelude { inherit lib; });
+with (import ../common { inherit lib; });
 
 let # The mirror gets `topConfig` too. An option settled once for the whole
     # project, rather than per driver, is read from `topConfig`, even though

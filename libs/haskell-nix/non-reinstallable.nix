@@ -37,9 +37,11 @@
 
 { pkgs, ... }@args:
 
+with (import ../common { inherit lib; });
+
 let compiler = compilers.resolve (compilers.targetKey pkgs.stdenv.hostPlatform);
 
-    upstream = import "${haskell-nix-src}/modules/install-plan/non-reinstallable.nix" args;
+    upstream = import "${haskell-nix-src}/${paths.haskell-nix.non-reinstallable}" args;
 
     roots = upstream.nonReinstallablePkgs ++ compiler.extraNonReinstallablePkgs;
 

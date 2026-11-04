@@ -43,7 +43,9 @@
 
 with lib;
 
-let prefix = import ../message-prefix.nix { inherit driver; };
+with (import ../common { inherit lib; });
+
+let prefix = message-prefix { inherit driver; };
 
     crossPlatform = import ../cross/platform.nix { inherit lib; };
 

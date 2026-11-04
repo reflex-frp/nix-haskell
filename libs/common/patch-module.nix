@@ -10,16 +10,14 @@
 #     patches = [ ./splitmix-js.patch ];
 #   } { drivers = [ "haskell-nix" ]; }
 #   => a module setting `haskell-nix.packages.splitmix.patches`
+with (import ../prelude {});
+
 { package, patches, extras ? [] }:
 
 { drivers ? null }:
 
 {
   imports = [
-
-    ({ lib, ... }:
-      with (import ./prelude { inherit lib; });
-      { config = under drivers { packages.${package}.patches = patches; }; })
-
+    { config = under drivers { packages.${package}.patches = patches; }; }
   ] ++ extras;
 }

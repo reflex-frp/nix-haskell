@@ -25,13 +25,13 @@
 
 { config, lib, pkgs, ... }:
 
-with (import ../../../libs/prelude { inherit lib; });
+with (import ../../../libs/common { inherit lib; });
 
 let src = config.inputs.ghc-wasm-meta;
 
-    ghc = pkgs.callPackage "${src}/pkgs/wasm32-wasi-ghc.nix" { inherit flavour; };
+    ghc = pkgs.callPackage "${src}/${paths.ghc-wasm-meta.wasm32-wasi-ghc}" { inherit flavour; };
 
-    sdk = pkgs.callPackage "${src}/pkgs/wasi-sdk.nix" {};
+    sdk = pkgs.callPackage "${src}/${paths.ghc-wasm-meta.wasi-sdk}" {};
 
     compiler = {
       platforms.${platform} = {

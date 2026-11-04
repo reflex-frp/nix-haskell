@@ -1,4 +1,6 @@
-import ../../../../libs/patch-module.nix {
+with (import ../../../../libs/common {});
+
+patch-module {
 
   package = "jsaddle-wasm";
 

@@ -5,7 +5,7 @@
 { lib, pkgs, config, cfg, compiler, compilers, srpStanzaLines, withToolCompiler }:
 
 with lib;
-with (import ../../libs/prelude { inherit lib; });
+with (import ../../libs/common { inherit lib; });
 
 let translations = import ../../libs/driver/translation.nix { inherit lib; };
 
@@ -17,7 +17,7 @@ let translations = import ../../libs/driver/translation.nix { inherit lib; };
 
     selectionNeeded = cfg.compiler.platforms != {} || compiler.package != null;
 
-    prefix = import ../../libs/message-prefix.nix { driver = "haskell.nix"; };
+    prefix = message-prefix { driver = "haskell.nix"; };
 
     missingCompiler = key:
       throw (prefix "haskell-nix.compiler has no \"${key}\"");
@@ -252,7 +252,7 @@ in {
       "packages.*.components".via = "an `<exe>.jsexe` install for every executable named, in the project whose target is javascript";
 
       "shell.packages".set = {
-        shell.packages = import ../../libs/shell-packages-selection.nix {
+        shell.packages = local-packages-selection {
           packages = cfg.shell.packages;
           inherit (cfg) source-repository-packages;
         };

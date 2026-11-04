@@ -9,7 +9,7 @@
 { lib, pkgs, config, cfg, srpStanzaLines }:
 
 with lib;
-with (import ../../libs/prelude { inherit lib; });
+with (import ../../libs/common { inherit lib; });
 
 let srpDriver = (import ../../libs/cabal.nix { inherit pkgs; }).source-repository-packages cfg.source-repository-packages;
 

@@ -21,9 +21,11 @@
 
 { name, tweaks, ghc-options, ghc, pkgs }:
 
+with (import ../../common { inherit lib; });
+
 let platform = pkgs.stdenv.hostPlatform;
 
-    prefix = import ../../message-prefix.nix { driver = "nixpkgs"; };
+    prefix = message-prefix { driver = "nixpkgs"; };
 
     stated = field: fallback:
       if (tweaks.${field} or null) == null

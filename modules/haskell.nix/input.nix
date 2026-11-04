@@ -4,7 +4,7 @@
 { lib, config, system }:
 
 with lib;
-with (import ../../libs/prelude { inherit lib; });
+with (import ../../libs/common { inherit lib; });
 
 let haskellNixArgs = config."haskell-nix".input.nixpkgsArgs;
 

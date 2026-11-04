@@ -4,7 +4,7 @@
 { lib, config, cfg }:
 
 with lib;
-with (import ../../libs/prelude { inherit lib; });
+with (import ../../libs/common { inherit lib; });
 
 {
 
@@ -26,10 +26,10 @@ with (import ../../libs/prelude { inherit lib; });
         # mkForce wins in the real evaluation.
         { config.src = mkDefault cfg.src-cleaned; }
         ({...}@projectArgs:
-          let sources = [
-                (config.inputs."haskell-nix" + "/modules/cabal-project.nix")
-                (config.inputs."haskell-nix" + "/modules/project-common.nix")
-                (config.inputs."haskell-nix" + "/modules/project.nix")
+          let sources = map (file: "${config.inputs."haskell-nix"}/${file}") [
+                paths.haskell-nix.cabal-project
+                paths.haskell-nix.project-common
+                paths.haskell-nix.project
               ];
 
               moduleArgs = projectArgs // {
@@ -40,29 +40,23 @@ with (import ../../libs/prelude { inherit lib; });
               upstreamOptions = zipAttrsWith (name: vals: last vals)
                 (map (module: (import module moduleArgs).options) sources);
 
-              docPatches = {
-                evalPackages.defaultText = fenced-code ''
-                  if pkgs.pkgsBuildBuild.stdenv.system == config.evalSystem
-                  then pkgs.pkgsBuildBuild
-                  else
-                    import pkgs.path {
-                      system = config.evalSystem;
-                      overlays = pkgs.overlays;
-                    };
-                '';
-                inputMap.description = ''
-                  Specifies the contents of urls in the cabal.project file.
-                  For a `source-repository-packages` stanza, haskell.nix
-                  checks the `.rev` attribute against the `tag`.
+              withoutFixme = text:
+                concatStringsSep "\n"
+                  (filter (line: !hasPrefix "# FIXME" (trim line)) (splitString "\n" text));
 
-                  For a `revision` block, it reads `inputMap.<url>`, and
-                  looks up the `.tar.gz` file of each named package in the
-                  `inputMap` as well.
-                '';
+              cleaned = mapAttrs (_: option:
+                if isString (option.description or null)
+                then option // { description = withoutFixme option.description; }
+                else option) upstreamOptions;
+
+              # The default is a package set, which the manual cannot print.
+              docPatches = {
+                evalPackages.defaultText = upstreamOptions.evalPackages.defaultText
+                  or (literalMD "haskell.nix's package set for `evalSystem`");
               };
 
           in {
-            options = recursiveUpdate upstreamOptions docPatches;
+            options = recursiveUpdate cleaned docPatches;
           }
         )
       ];

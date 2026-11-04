@@ -6,7 +6,7 @@
 #
 #   and [ true false ]
 #   => false
-{ lib }:
+{ lib ? null }:
 
 {
   and = import ./and.nix { inherit lib; };

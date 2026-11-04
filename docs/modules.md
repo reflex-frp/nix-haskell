@@ -4599,16 +4599,7 @@ attribute set
 
 
 *Default:*
-
-```
-if pkgs.pkgsBuildBuild.stdenv.system == config.evalSystem
-then pkgs.pkgsBuildBuild
-else
-  import pkgs.path {
-    system = config.evalSystem;
-    overlays = pkgs.overlays;
-  };
-```
+haskell\.nix’s package set for ` evalSystem `
 
 *Declared by:*
  - [<nix-haskell>/modules/haskell\.nix](file://<nix-haskell>/modules/haskell.nix)
@@ -5055,12 +5046,10 @@ null
 
 
 Specifies the contents of urls in the cabal\.project file\.
-For a ` source-repository-packages ` stanza, haskell\.nix
-checks the ` .rev ` attribute against the ` tag `\.
-
-For a ` revision ` block, it reads ` inputMap.<url> `, and
-looks up the ` .tar.gz ` file of each named package in the
-` inputMap ` as well\.
+The ` .rev ` attribute is checked against the ` tag ` for ` source-repository-packages `\.
+For ` revision ` blocks the ` inputMap.<url> ` will be used and
+they ` .tar.gz ` for the ` packages ` used will also be looked up
+in the ` inputMap `\.
 
 
 

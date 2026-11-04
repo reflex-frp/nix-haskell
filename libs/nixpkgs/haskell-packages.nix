@@ -21,7 +21,9 @@
 
 with lib;
 
-let prefix = import ../message-prefix.nix { driver = "nixpkgs"; };
+with (import ../common { inherit lib; });
+
+let prefix = message-prefix { driver = "nixpkgs"; };
 
     closestSet =
       pkgs.haskell.packages.${compiler.stockName}

@@ -25,7 +25,7 @@
 { config, pkgs, ... }:
 
 with lib;
-with (import ../prelude { inherit lib; });
+with (import ../common { inherit lib; });
 
 let crossPlatform = import ../cross/platform.nix { inherit lib; };
 

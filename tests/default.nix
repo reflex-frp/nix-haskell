@@ -2,6 +2,8 @@
 #
 #   translation-totality        every common option is translated by every
 #                               driver, in both directions (pure eval)
+#   upstream-paths              every file nix-haskell imports from inside an
+#                               input still exists (pure eval)
 #   compiler-spec               how a compiler is resolved: driver fallbacks,
 #                               derived names, the attributes spliced onto a
 #                               compiler package, per-platform dispatch and
@@ -33,6 +35,7 @@
 }:
 
 with pkgs.lib;
+with (import ../libs/common { inherit (pkgs) lib; });
 
 let eval = import ../eval.nix { inherit system pkgs inputs; };
 
@@ -69,6 +72,19 @@ let eval = import ../eval.nix { inherit system pkgs inputs; };
       in if failures == []
          then pkgs.runCommand "translation-totality" {} "echo ok > $out"
          else throw (concatStringsSep "\n" failures);
+
+    # ------------------------------------------------------------------------
+    # upstream-paths
+    # ------------------------------------------------------------------------
+
+    upstream-paths =
+      let missingIn = input: files:
+            map (file: "${input}/${file}")
+              (filter (file: !pathExists "${inputs.${input}}/${file}") (attrValues files));
+          missing = concatLists (mapAttrsToList missingIn paths);
+      in if missing == []
+         then pkgs.runCommand "upstream-paths" {} "echo ok > $out"
+         else throw ("upstream files no longer exist: " + concatStringsSep ", " missing);
 
     # ------------------------------------------------------------------------
     # compiler-spec
@@ -603,7 +619,7 @@ in {
   # What the flake exposes
   # --------------------------------------------------------------------------
 
-  inherit translation-totality compiler-spec bundle-optimizer-spec bundle-optimizers;
+  inherit translation-totality upstream-paths compiler-spec bundle-optimizer-spec bundle-optimizers;
   inherit package-arguments-spec cross-target-row-spec fine-grained-spec;
 
   every-option-haskell-nix = every-option "haskell-nix";

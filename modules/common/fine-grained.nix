@@ -9,9 +9,9 @@
 { lib, config, topConfig, pkgs }:
 
 with lib;
-with (import ../../libs/prelude { inherit lib; });
+with (import ../../libs/common { inherit lib; });
 
-let prefix = import ../../libs/message-prefix.nix {};
+let prefix = message-prefix {};
 
     fineGrainedExperimental = prefix
       ("fine-grained builds are experimental. They stand on experimental"

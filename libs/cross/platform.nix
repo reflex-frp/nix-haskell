@@ -14,11 +14,12 @@
 { lib }:
 
 with lib;
+with (import ../common { inherit lib; });
 
 rec {
 
   targetFor = key:
-    let prefix = import ../message-prefix.nix {};
+    let prefix = message-prefix {};
         example = systems.examples.${key}
           or (throw (prefix ("\"${key}\" names neither the native system"
             + " nor a pkgsCross platform")));

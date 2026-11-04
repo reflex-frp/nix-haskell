@@ -15,7 +15,7 @@
 { config, options, lib, pkgs, system, ... }:
 
 with lib;
-with (import ../../libs/prelude { inherit lib; });
+with (import ../../libs/common { inherit lib; });
 
 let cfg = config."haskell-nix";
 

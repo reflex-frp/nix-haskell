@@ -1,15 +1,13 @@
 { config, lib, ... }:
 
 with lib;
-with (import ../libs/prelude { inherit lib; });
+with (import ../libs/common { inherit lib; });
 
-let thunkSource = import ../libs/thunk.nix;
-
-    isSource = value: builtins.isPath value || builtins.isString value || value ? outPath;
+let isSource =value: builtins.isPath value || builtins.isString value || value ? outPath;
 
     resolve = value:
       if isSource value
-      then thunkSource value
+      then thunk value
       else value;
 
     withMatchingPkgs = inputs: inputs // {

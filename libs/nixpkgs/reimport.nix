@@ -12,7 +12,7 @@
 #   => pkgs itself
 pkgs: change:
 
-with (import ../prelude { inherit (pkgs) lib; });
+with (import ../common { inherit (pkgs) lib; });
 
 let oldArgs = {
       system = pkgs.stdenv.buildPlatform.system;

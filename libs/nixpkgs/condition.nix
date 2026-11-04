@@ -21,7 +21,9 @@
 #                                               assumed to hold
 { lib, hostMap }:
 
-let prefix = import ../message-prefix.nix { driver = "nixpkgs"; };
+with (import ../common { inherit lib; });
+
+let prefix = message-prefix { driver = "nixpkgs"; };
 
     inherit (lib) toLower warn any all hasPrefix removePrefix stringToCharacters trim;
 
