@@ -24,17 +24,12 @@
 
 let ghcCommand = "${ghc}/bin/${ghc.targetPrefix}ghc";
 
-    # The directory that holds a dependency's package database.
-    libdir =
-      "lib/${ghc.targetPrefix}${ghc.haskellCompilerName}"
-      + lib.optionalString (ghc ? hadrian) "/lib";
-
     # Keep the database outside the store. Cabal writes its path into the ghc
     # arguments, and sandstone then moves it into the store and scans it for
     # references. This gives each module derivation its dependencies.
     prepare = pkgs.writeShellScript "fine-grained-plan-${name}" ''
       set -eu
-      export PATH=${pkgs.coreutils}/bin:${ghc}/bin
+      export PATH=${pkgs.coreutils}/bin:${pkgs.findutils}/bin:${ghc}/bin
 
       if [ ! -d "$src" ]; then
         echo "a fine-grained build needs a source directory, and got: $src" >&2
@@ -46,9 +41,9 @@ let ghcCommand = "${ghc}/bin/${ghc.targetPrefix}ghc";
       packageConfDir="$NIX_BUILD_TOP/package.conf.d"
       mkdir -p "$packageConfDir"
       for dependency in $dependencies; do
-        if [ -d "$dependency/${libdir}/package.conf.d" ]; then
-          cp -f "$dependency/${libdir}/package.conf.d/"*.conf "$packageConfDir/"
-        fi
+        for database in $(find "$dependency/lib" -maxdepth 3 -type d -name package.conf.d 2>/dev/null); do
+          cp -f "$database/"*.conf "$packageConfDir/"
+        done
       done
       ${ghcCommand}-pkg --package-db="$packageConfDir" recache
 
