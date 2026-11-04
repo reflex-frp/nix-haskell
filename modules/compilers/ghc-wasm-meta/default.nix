@@ -29,7 +29,32 @@ with (import ../../../libs/common { inherit lib; });
 
 let src = config.inputs.ghc-wasm-meta;
 
-    ghc = pkgs.callPackage "${src}/${paths.ghc-wasm-meta.wasm32-wasi-ghc}" { inherit flavour; };
+    # shortcut: a ghc-wasm-meta 9.14 bindist reports a `ghc-internal Unit Id`
+    # that its own database lacks, and cabal 3.18 rejects that. Drop this
+    # once the bindist's `--info` matches its database.
+    fixInfo = ''
+      if internal=$($out/bin/wasm32-wasi-ghc-pkg field ghc-internal id --global --simple-output 2>/dev/null); then
+        for ghc in $out/bin/wasm32-wasi-ghc $out/bin/wasm32-wasi-ghc-9.*; do
+          unfixed=$out/bin/.$(basename $ghc)-unfixed-info
+          mv $ghc $unfixed
+          cat > $ghc <<EOF
+      #!${pkgs.runtimeShell}
+      for arg in "\$@"; do
+        if [ "\$arg" = --info ]; then
+          $unfixed "\$@" | ${pkgs.gnused}/bin/sed 's|("ghc-internal Unit Id","[^"]*")|("ghc-internal Unit Id","'$internal'")|'
+          exit "\''${PIPESTATUS[0]}"
+        fi
+      done
+      exec $unfixed "\$@"
+      EOF
+          chmod +x $ghc
+        done
+      fi
+    '';
+
+    ghc = (pkgs.callPackage "${src}/${paths.ghc-wasm-meta.wasm32-wasi-ghc}" { inherit flavour; }).overrideAttrs (old: {
+      postInstall = old.postInstall + fixInfo;
+    });
 
     sdk = pkgs.callPackage "${src}/${paths.ghc-wasm-meta.wasi-sdk}" {};
 
