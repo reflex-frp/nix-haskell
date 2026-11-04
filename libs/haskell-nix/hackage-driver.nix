@@ -1,6 +1,6 @@
-# haskell.nix currently has no way to overlay packages on the hackage
-# index, so this generates a hackage index of its own. The cabal solver
-# reads it beside the real one and, where the constraints match, picks the
+# haskell.nix reads extra hackage indexes but cannot build one from source
+# directories, so this builds one. The cabal solver reads it beside the
+# real one and, where the constraints match, picks the
 # packages from this overlay.
 #
 # A simpler take on:
