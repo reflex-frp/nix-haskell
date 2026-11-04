@@ -48,10 +48,11 @@ let src = config.inputs.ghc-wasm-meta;
         # version-named install.
         haskell-nix.libDir = "lib";
 
-        # The bindist's `text` is built against simdutf, and the C++
-        # runtime simdutf needs comes from the `system-cxx-std-lib` of the
-        # compiler's own database.
-        haskell-nix.extraNonReinstallablePkgs = [ "system-cxx-std-lib" ];
+        # The bindist's `text` needs these packages from the compiler's own
+        # database, and the plan does not always name them:
+        # - `system-cxx-std-lib`, the C++ runtime of the simdutf it uses.
+        # - `template-haskell-lift`, from GHC 9.14 on.
+        haskell-nix.extraNonReinstallablePkgs = [ "system-cxx-std-lib" "template-haskell-lift" ];
 
         # The wasm backend runs Template Haskell itself, so splices must
         # not be proxied to the target, which has no sockets to proxy over.
