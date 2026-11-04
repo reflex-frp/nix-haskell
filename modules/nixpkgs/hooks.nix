@@ -71,7 +71,10 @@ with (import ../../libs/common { inherit lib; });
   evaluate-condition = function-option {
     result = types.bool;
     default = { condition, hostMap }:
-      import ../../libs/nixpkgs/condition.nix { inherit lib hostMap; } condition;
+      import ../../libs/nixpkgs/condition.nix {
+        inherit lib hostMap;
+        compiler-version = config.nixpkgs.compiler-version;
+      } condition;
     defaultText = fenced-code ''<nix-haskell>/libs/nixpkgs/condition.nix'';
     description = ''
       Evaluates the `condition` of a `source-repository-packages`
@@ -81,15 +84,14 @@ with (import ../../libs/common { inherit lib; });
       - `hostMap`, haskell.nix's map for the platform, holding
         its cabal `os` and `arch` names
 
-      The default handles `os(..)`, `arch(..)`, `!`, `&&`, `||`
-      and parentheses. It assumes `impl(..)` and `flag(..)` hold,
-      with a warning. Replace it to answer `impl(..)` from
-      `compiler-version`.
+      The default handles `os(..)`, `arch(..)`, `impl(ghc ..)`,
+      `!`, `&&`, `||` and parentheses. It assumes `flag(..)` and
+      any other `impl(..)` hold, with a warning.
     '';
     example = fenced-code ''
       { condition, hostMap }:
-        if condition == "impl(ghc >= 9.6)"
-        then lib.versionAtLeast config.nixpkgs.compiler-version "9.6"
+        if condition == "flag(js-backend)"
+        then true
         else import "''${nix-haskell-libs}/nixpkgs/condition.nix" { inherit lib hostMap; } condition
     '';
   };

@@ -5081,11 +5081,10 @@ The call carries:
 cabal \f[CR]os\f[R] and \f[CR]arch\f[R] names
 .PP
 The default handles \f[CR]os(..)\f[R], \f[CR]arch(..)\f[R],
-\f[CR]!\f[R], \f[CR]&&\f[R], \f[CR]||\f[R] and parentheses.
-It assumes \f[CR]impl(..)\f[R] and \f[CR]flag(..)\f[R] hold, with a
-warning.
-Replace it to answer \f[CR]impl(..)\f[R] from
-\f[CR]compiler\-version\f[R].
+\f[CR]impl(ghc ..)\f[R], \f[CR]!\f[R], \f[CR]&&\f[R], \f[CR]||\f[R] and
+parentheses.
+It assumes \f[CR]flag(..)\f[R] and any other \f[CR]impl(..)\f[R] hold,
+with a warning.
 .PP
 \f[I]Type:\f[R] function that evaluates to a(n) boolean
 .PP
@@ -5099,8 +5098,8 @@ Replace it to answer \f[CR]impl(..)\f[R] from
 .IP
 .EX
 { condition, hostMap }:
-  if condition == \(dqimpl(ghc >= 9.6)\(dq
-  then lib.versionAtLeast config.nixpkgs.compiler\-version \(dq9.6\(dq
+  if condition == \(dqflag(js\-backend)\(dq
+  then true
   else import \(dq${nix\-haskell\-libs}/nixpkgs/condition.nix\(dq { inherit lib hostMap; } condition
 .EE
 .PP

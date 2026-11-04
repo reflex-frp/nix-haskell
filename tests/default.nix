@@ -4,6 +4,9 @@
 #                               driver, in both directions (pure eval)
 #   upstream-paths              every file nix-haskell imports from inside an
 #                               input still exists (pure eval)
+#   condition-spec              `impl(ghc ..)` conditions of
+#                               source-repository-packages, answered from the
+#                               compiler version (pure eval)
 #   compiler-spec               how a compiler is resolved: driver fallbacks,
 #                               derived names, the attributes spliced onto a
 #                               compiler package, per-platform dispatch and
@@ -85,6 +88,32 @@ let eval = import ../eval.nix { inherit system pkgs inputs; };
       in if missing == []
          then pkgs.runCommand "upstream-paths" {} "echo ok > $out"
          else throw ("upstream files no longer exist: " + concatStringsSep ", " missing);
+
+    # ------------------------------------------------------------------------
+    # condition-spec
+    # ------------------------------------------------------------------------
+
+    condition-spec =
+      let holds = import ../libs/nixpkgs/condition.nix {
+            lib = pkgs.lib;
+            hostMap = { os = "Linux"; arch = "X86_64"; };
+            compiler-version = "9.14.1";
+          };
+          cases = {
+            "impl(ghc)" = true;
+            "impl(ghc >= 9.6)" = true;
+            "impl(ghc == 9.14.*)" = true;
+            "impl(ghc == 9.12.*)" = false;
+            "impl(ghc < 9.6)" = false;
+            "!impl(ghc)" = false;
+          };
+          wrong = filterAttrs (condition: expected: holds condition != expected) cases;
+          failures = mapAttrsToList
+            (condition: expected: "${condition} should be ${boolToString expected}")
+            wrong;
+      in if failures == []
+         then pkgs.runCommand "condition-spec" {} "echo ok > $out"
+         else throw (concatStringsSep "\n" failures);
 
     # ------------------------------------------------------------------------
     # compiler-spec
@@ -619,7 +648,7 @@ in {
   # What the flake exposes
   # --------------------------------------------------------------------------
 
-  inherit translation-totality upstream-paths compiler-spec bundle-optimizer-spec bundle-optimizers;
+  inherit translation-totality upstream-paths condition-spec compiler-spec bundle-optimizer-spec bundle-optimizers;
   inherit package-arguments-spec cross-target-row-spec fine-grained-spec;
 
   every-option-haskell-nix = every-option "haskell-nix";

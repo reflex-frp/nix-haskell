@@ -7157,10 +7157,9 @@ entry against the target platform\. The call carries:
  - ` hostMap `, haskell\.nix’s map for the platform, holding
    its cabal ` os ` and ` arch ` names
 
-The default handles ` os(..) `, ` arch(..) `, ` ! `, ` && `, ` || `
-and parentheses\. It assumes ` impl(..) ` and ` flag(..) ` hold,
-with a warning\. Replace it to answer ` impl(..) ` from
-` compiler-version `\.
+The default handles ` os(..) `, ` arch(..) `, ` impl(ghc ..) `,
+` ! `, ` && `, ` || ` and parentheses\. It assumes ` flag(..) ` and
+any other ` impl(..) ` hold, with a warning\.
 
 
 
@@ -7181,8 +7180,8 @@ function that evaluates to a(n) boolean
 
 ```
 { condition, hostMap }:
-  if condition == "impl(ghc >= 9.6)"
-  then lib.versionAtLeast config.nixpkgs.compiler-version "9.6"
+  if condition == "flag(js-backend)"
+  then true
   else import "${nix-haskell-libs}/nixpkgs/condition.nix" { inherit lib hostMap; } condition
 ```
 

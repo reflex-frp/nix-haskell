@@ -19,7 +19,7 @@
 #   holds "impl(ghc >= 9.6)"                 => true, with a warning: a
 #                                               condition it cannot evaluate is
 #                                               assumed to hold
-{ lib, hostMap }:
+{ lib, hostMap, compiler-version ? null }:
 
 with (import ../common { inherit lib; });
 
@@ -52,6 +52,29 @@ let prefix = message-prefix { driver = "nixpkgs"; };
 
     archHolds = a: toLower a == toLower hostMap.arch;
 
+    # `impl(ghc)`, or `impl(ghc <op> <version>)`, where `== 9.14.*` matches a prefix.
+    implHolds = a:
+      let parsed = builtins.match "ghc[[:space:]]*(==|>=|<=|>|<)?[[:space:]]*([0-9]+(\\.[0-9]+)*)?(\\.\\*)?" a;
+          op = builtins.elemAt parsed 0;
+          version = builtins.elemAt parsed 1;
+          wildcard = builtins.elemAt parsed 3 != null;
+          order = builtins.compareVersions compiler-version version;
+      in if parsed == null || compiler-version == null
+         then warn (prefix "impl(${a}) source-repository-package conditions are not evaluated; assuming true") true
+         else if version == null
+         then true
+         else if wildcard
+         then hasPrefix "${version}." "${compiler-version}."
+         else if op == ">="
+         then order >= 0
+         else if op == "<="
+         then order <= 0
+         else if op == ">"
+         then order > 0
+         else if op == "<"
+         then order < 0
+         else order == 0;
+
     evalAtom = s:
       let t = trim s;
 
@@ -64,6 +87,8 @@ let prefix = message-prefix { driver = "nixpkgs"; };
                then osHolds arg
                else if fn == "arch"
                then archHolds arg
+               else if fn == "impl"
+               then implHolds arg
                else warn (prefix "${fn}(${arg}) source-repository-package conditions are not evaluated; assuming true") true;
 
       in if t == ""
