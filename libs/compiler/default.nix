@@ -169,11 +169,15 @@ in {
     else platformEntries.${key};
 
   # Whether any entry asks for machinery a driver only needs when a compiler
-  # is described this way: a toolchain to point builds at, boot packages to
-  # take from the compiler rather than build.
+  # is described this way:
+  # - a toolchain to point builds at
+  # - boot packages to take from the compiler rather than build
+  # - a compiler package, whose database names more boot packages
   anyToolchain = any (e: e.hasToolchain) allEntries;
 
   anyExtraNonReinstallablePkgs = any (e: e.extraNonReinstallablePkgs != []) allEntries;
+
+  anyPackage = any (e: e.package != null) allEntries;
 
   # The `platforms` key for a target platform, or null when no entry matches
   # and the compiler above the table applies.

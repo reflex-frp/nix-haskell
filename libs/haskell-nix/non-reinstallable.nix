@@ -1,8 +1,12 @@
-# A haskell.nix module adding the boot packages a compiler names to the
-# ones a project takes from the compiler's database rather than building. A
-# package the compiler was configured against, but absent from both lists
-# the driver copies out of it, stays unresolved for everything downstream
-# of it.
+# A haskell.nix module that sets `nonReinstallablePkgs`. The build copies
+# these packages from the compiler's package database. If a copied
+# package needs a package that is not copied, the build fails.
+#
+# The list contains:
+# 1. The haskell.nix list.
+# 2. The packages that the compiler entry names.
+# 3. If the project supplies the compiler, the packages that 1 and 2
+#    need in its database. 1 and 2 already need these packages.
 #
 # A definition of the list replaces it rather than extends it. This module
 # therefore reads haskell.nix's own definition and appends to it instead of
@@ -19,17 +23,16 @@
 #     inherit lib compilers;
 #     haskell-nix-src = config.inputs."haskell-nix";
 #   }
-#   => a haskell.nix module which, in the project whose compiler names
-#      `system-cxx-std-lib`, evaluates to
+#   => a haskell.nix module. For the wasm compiler of ghc-wasm-meta, it sets
 #
 #        config.nonReinstallablePkgs = [
-#          "rts" "base" "ghc-prim" "integer-gmp" "integer-simple"  # haskell.nix's
-#          "ghc-bignum" "ghc-internal" "ghci" ...                  # own list
-#          "system-cxx-std-lib"                                    # the compiler's
+#          "rts" "base" ... "filepath" ...     # 1. haskell.nix list
+#          "system-cxx-std-lib"                # 2. compiler entry
+#          "template-haskell-lift"             # 3. needed by 1 and 2
+#          "template-haskell-quasiquoter" "pretty" "mtl"
 #        ];
 #
-#      and in a project whose compiler names none, to nothing, leaving
-#      haskell.nix's list as it was
+#      For a haskell.nix compiler that names no packages, it sets nothing.
 { lib, compilers, haskell-nix-src }:
 
 { pkgs, ... }@args:
@@ -38,14 +41,23 @@ let compiler = compilers.resolve (compilers.targetKey pkgs.stdenv.hostPlatform);
 
     upstream = import "${haskell-nix-src}/modules/install-plan/non-reinstallable.nix" args;
 
+    roots = upstream.nonReinstallablePkgs ++ compiler.extraNonReinstallablePkgs;
+
+    bootDependencies =
+      if compiler.package == null
+      then []
+      else import ./boot-dependencies.nix { inherit lib pkgs; } {
+        inherit (compiler) package targetPrefix;
+        inherit roots;
+      };
+
 in {
 
   # This module must use mkIf, not a conditional body. `pkgs` reaches a
   # module through `_module.args`, so a module body that depends on `pkgs`
   # is a cycle.
-  config = lib.mkIf (compiler.extraNonReinstallablePkgs != []) {
-    nonReinstallablePkgs =
-      upstream.nonReinstallablePkgs ++ compiler.extraNonReinstallablePkgs;
+  config = lib.mkIf (compiler.package != null || compiler.extraNonReinstallablePkgs != []) {
+    nonReinstallablePkgs = roots ++ bootDependencies;
   };
 
 }

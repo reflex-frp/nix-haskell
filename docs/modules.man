@@ -1709,14 +1709,10 @@ Compiler details only the haskell.nix driver reads.
 /modules/common
 .UE \c
 .SS compiler.haskell\-nix.extraNonReinstallablePkgs
-Packages taken from the compiler\(cqs own database rather than built, on
-top of the ones the driver already takes from there.
-Put a package here when the compiler was configured against it, but the
-lists the driver copies out of the compiler do not name it.
-Without the entry, a build that needs the package finds nothing to
-depend on, and everything downstream of it breaks.
-One example: a compiler whose \f[CR]text\f[R] is built against simdutf
-needs \f[CR]system\-cxx\-std\-lib\f[R] here.
+Packages to copy from the compiler\(cqs database, with the packages they
+need.
+Name a package that only a plan package needs, such as
+\f[CR]system\-cxx\-std\-lib\f[R] for a simdutf \f[CR]text\f[R].
 .PP
 \f[I]Type:\f[R] list of string
 .PP
@@ -1938,14 +1934,10 @@ Compiler details only the haskell.nix driver reads.
 /modules/common
 .UE \c
 .SS compiler.platforms.<name>.haskell\-nix.extraNonReinstallablePkgs
-Packages taken from the compiler\(cqs own database rather than built, on
-top of the ones the driver already takes from there.
-Put a package here when the compiler was configured against it, but the
-lists the driver copies out of the compiler do not name it.
-Without the entry, a build that needs the package finds nothing to
-depend on, and everything downstream of it breaks.
-One example: a compiler whose \f[CR]text\f[R] is built against simdutf
-needs \f[CR]system\-cxx\-std\-lib\f[R] here.
+Packages to copy from the compiler\(cqs database, with the packages they
+need.
+Name a package that only a plan package needs, such as
+\f[CR]system\-cxx\-std\-lib\f[R] for a simdutf \f[CR]text\f[R].
 .PP
 \f[I]Type:\f[R] list of string
 .PP

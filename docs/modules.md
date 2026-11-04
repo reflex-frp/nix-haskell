@@ -2392,15 +2392,9 @@ submodule
 
 
 
-Packages taken from the compiler’s own database rather than
-built, on top of the ones the driver already takes from
-there\. Put a package here when the compiler was configured
-against it, but the lists the driver copies out of the
-compiler do not name it\. Without the entry, a build that
-needs the package finds nothing to depend on, and
-everything downstream of it breaks\. One example: a compiler
-whose ` text ` is built against simdutf needs
-` system-cxx-std-lib ` here\.
+Packages to copy from the compiler’s database, with the
+packages they need\. Name a package that only a plan package
+needs, such as ` system-cxx-std-lib ` for a simdutf ` text `\.
 
 
 
@@ -2718,15 +2712,9 @@ submodule
 
 
 
-Packages taken from the compiler’s own database rather than
-built, on top of the ones the driver already takes from
-there\. Put a package here when the compiler was configured
-against it, but the lists the driver copies out of the
-compiler do not name it\. Without the entry, a build that
-needs the package finds nothing to depend on, and
-everything downstream of it breaks\. One example: a compiler
-whose ` text ` is built against simdutf needs
-` system-cxx-std-lib ` here\.
+Packages to copy from the compiler’s database, with the
+packages they need\. Name a package that only a plan package
+needs, such as ` system-cxx-std-lib ` for a simdutf ` text `\.
 
 
 

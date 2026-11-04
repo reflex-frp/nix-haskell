@@ -153,10 +153,10 @@ in {
       };
       "compiler.toolchain".via = "a module giving every package the compiler's own configure flags, on the platforms whose entry carries a toolchain";
 
-      "compiler.package".via = "the compiler `compilerSelection` returns for its platform, carrying haskell.nix's `cachedDeps`";
+      "compiler.package".via = "the compiler `compilerSelection` returns for its platform, carrying haskell.nix's `cachedDeps`; a module adds the packages that `nonReinstallablePkgs` needs in its database to that list";
       "compiler.version".via = "spliced onto the compiler as `ghc.version`; the compiler the shell tools are built with is the driver's own of that version";
       "compiler.enableShared".via = "spliced onto the compiler as `ghc.enableShared`, which decides every component's `shared:`";
-      "compiler.haskell-nix".set = mkIf compilers.anyExtraNonReinstallablePkgs {
+      "compiler.haskell-nix".set = mkIf (compilers.anyPackage || compilers.anyExtraNonReinstallablePkgs) {
         modules = [
           (import ../../libs/haskell-nix/non-reinstallable.nix {
             inherit lib compilers;
