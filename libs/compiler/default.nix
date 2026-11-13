@@ -27,16 +27,16 @@
 #     system = "x86_64-linux";
 #   };
 #   => { native = <entry>; resolve = <key: entry>;
-#        targetKey = <targetPlatform: key or null>;
+#        targetKey = <platformLib: targetPlatform: key or null>;
 #        anyToolchain = <bool>; anyExtraNonReinstallablePkgs = <bool>; }
 #   compilers.native
 #   => { name = "ghc912"; stockName = "ghc912"; package = null; annotated = null; ... }
 #   compilers.resolve "wasi32"
 #   => { name = "ghc912"; stockName = "ghc9124"; annotated = <bindist // { ... }>;
 #        toolchainFlags = [ "--with-gcc=/nix/store/...-wasi-sdk/bin/wasm32-wasi-clang" ... ]; }
-#   compilers.targetKey <elaborated wasi32>    => "wasi32"
-#   compilers.targetKey <elaborated x86_64>    => "x86_64-linux"
-#   compilers.targetKey <elaborated aarch64>   => null
+#   compilers.targetKey pkgs.lib <elaborated wasi32>    => "wasi32"
+#   compilers.targetKey pkgs.lib <elaborated x86_64>    => "x86_64-linux"
+#   compilers.targetKey pkgs.lib <elaborated aarch64>   => null
 { lib }:
 
 { compiler, system, driver ? null }:
@@ -46,8 +46,6 @@ with lib;
 with (import ../common { inherit lib; });
 
 let prefix = message-prefix { inherit driver; };
-
-    crossPlatform = import ../cross/platform.nix { inherit lib; };
 
     platforms = compiler.platforms;
 
@@ -182,9 +180,12 @@ in {
   anyPackage = any (e: e.package != null) allEntries;
 
   # The `platforms` key for a target platform, or null when no entry matches
-  # and the compiler above the table applies.
-  targetKey = targetPlatform:
+  # and the compiler above the table applies. `platformLib` is the lib of the
+  # nixpkgs that made the platform, since two nixpkgs can spell one triple
+  # differently.
+  targetKey = platformLib: targetPlatform:
     let crossKeys = filter (key: key != system) (attrNames platforms);
+        crossPlatform = import ../cross/platform.nix { lib = platformLib; };
     in if targetPlatform.system == system
        then system
        else crossPlatform.keyFor crossKeys targetPlatform;

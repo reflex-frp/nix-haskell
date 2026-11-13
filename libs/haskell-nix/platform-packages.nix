@@ -27,7 +27,7 @@
 with lib;
 with (import ../common { inherit lib; });
 
-let crossPlatform = import ../cross/platform.nix { inherit lib; };
+let crossPlatform = import ../cross/platform.nix { lib = pkgs.lib; };
 
     key = crossPlatform.keyFor (attrNames platforms) pkgs.stdenv.hostPlatform;
 

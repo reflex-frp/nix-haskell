@@ -39,7 +39,7 @@
 
 with (import ../common { inherit lib; });
 
-let compiler = compilers.resolve (compilers.targetKey pkgs.stdenv.hostPlatform);
+let compiler = compilers.resolve (compilers.targetKey pkgs.lib pkgs.stdenv.hostPlatform);
 
     upstream = import "${haskell-nix-src}/${paths.haskell-nix.non-reinstallable}" args;
 

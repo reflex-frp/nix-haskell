@@ -169,11 +169,16 @@ let eval = import ../eval.nix { inherit system pkgs inputs; };
           selection = p: pkgs':
             p.config."haskell-nix".translation."compiler.name".set.compilerSelection pkgs';
           fakePkgs = platform: {
+            lib = pkgs.lib;
             stdenv.targetPlatform = platform;
             haskell-nix = { resolve-compiler-name = n: n; compiler.ghc912 = "stock-ghc912"; };
           };
           native = systems.elaborate system;
           wasi = systems.elaborate systems.examples.wasi32;
+          # haskell.nix builds from its own nixpkgs, which can spell a
+          # target's triple differently than the project's
+          driverLib = import "${hello.config."haskell-nix".nixpkgsSource}/lib";
+          driverWasi = driverLib.systems.elaborate driverLib.systems.examples.wasi32;
 
           nativeOf = p: (resolved p).native;
           wasiOf = p: (resolved p).resolve "wasi32";
@@ -207,9 +212,11 @@ let eval = import ../eval.nix { inherit system pkgs inputs; };
 
           # platform lookup, and its fall back to the compiler above the table
           platformFailures =
-            optional ((resolved cross).targetKey wasi != "wasi32")
+            optional ((resolved cross).targetKey pkgs.lib wasi != "wasi32")
               "a target platform does not find its own entry"
-            ++ optional ((resolved cross).targetKey native != system)
+            ++ optional ((resolved cross).targetKey driverLib driverWasi != "wasi32")
+              "a target platform from the driver's own nixpkgs does not find its own entry"
+            ++ optional ((resolved cross).targetKey pkgs.lib native != system)
               "the native platform does not resolve to the native system"
             ++ optional ((resolved cross).resolve "ghcjs" != (nativeOf cross))
               "a platform without an entry does not use the compiler above the table"
@@ -234,7 +241,7 @@ let eval = import ../eval.nix { inherit system pkgs inputs; };
                })).name).success
               "a compiler with no version and no name does not fail"
             ++ optional (builtins.tryEval
-                 ((resolved (project { platforms.nonsense.name = "ghc912"; })).targetKey wasi)).success
+                 ((resolved (project { platforms.nonsense.name = "ghc912"; })).targetKey pkgs.lib wasi)).success
               "a platform key that names no platform does not fail";
 
           # the drivers, given a compiler package

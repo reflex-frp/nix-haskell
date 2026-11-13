@@ -39,7 +39,7 @@ let translations = import ../../libs/driver/translation.nix { inherit lib; };
       else foreignPlatformName target;
 
     selectCompiler = p:
-      let target = compilers.resolve (compilers.targetKey p.stdenv.targetPlatform);
+      let target = compilers.resolve (compilers.targetKey p.lib p.stdenv.targetPlatform);
           key = p.haskell-nix.resolve-compiler-name compiler.name;
       in { ${key} = compilerFor target key p; };
 

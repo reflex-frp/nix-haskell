@@ -30,7 +30,7 @@
 
 { config, pkgs, ... }:
 
-let key = compilers.targetKey pkgs.stdenv.hostPlatform;
+let key = compilers.targetKey pkgs.lib pkgs.stdenv.hostPlatform;
 
     compiler = compilers.resolve key;
 
