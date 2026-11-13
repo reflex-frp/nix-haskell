@@ -4,6 +4,6 @@
   "branch": "nixos-26.05",
   "fetchSubmodules": false,
   "private": false,
-  "rev": "7dcdd87373d72e7a2173e4db02e20d3d7f495cfd",
-  "sha256": "09f5ys7xly8gaip09yxpp1xawqm4dlzrjq0ib8x80y9wsdpnp2xl"
+  "rev": "ac588ef1c914865dad517b337ea0eb9694a4021c",
+  "sha256": "1sxd2sqlpy1bx6b5xiwy1pbyygazl9d1a5yy0rvqfsihqpcibq2y"
 }
