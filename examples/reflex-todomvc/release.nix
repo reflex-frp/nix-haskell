@@ -92,16 +92,18 @@ let nix-haskell = import ../.. { inherit system inputs; };
         in lib.filterAttrs (_: artifact: artifact != null) exe.bundles);
 
     # The name of the wrapper that puts a cross target's tools in front of the
-    # ones the shell carries for the build platform. It is the target's own
-    # prefix, so the compiler a target is built with decides it: haskell.nix
-    # builds its wasm compiler for wasm32-unknown-wasi, while the bindist is
-    # built for wasm32-wasi.
-    dispatcher = withWasmMeta: platform:
-      if platform == "ghcjs"
-      then "javascript-unknown-ghcjs"
-      else if withWasmMeta
-      then "wasm32-wasi"
-      else "wasm32-unknown-wasi";
+    # ones the shell carries for the build platform. It is the target prefix
+    # of the cross compiler the shell builds that wrapper from.
+    dispatcher = driver: p: platform:
+      lib.removeSuffix "-" (driverCrossGhc.${driver} p platform).targetPrefix;
+
+    # The cross compiler each driver builds its shell's wrapper from.
+    driverCrossGhc = {
+      haskell-nix = p: platform:
+        p.haskell-nix.project.projectCross.${platform}.shell.ghc;
+      nixpkgs = p: platform:
+        p.nixpkgs.project.projectCross.${platform}.haskellPackages.ghc;
+    };
 
     # The build a person would run, in the shell they would run it in. cabal
     # needs no package index: the shell's package database already carries
@@ -126,7 +128,7 @@ let nix-haskell = import ../.. { inherit system inputs; };
             echo 'jobs: $ncpus' > $CABAL_CONFIG
             echo 'active-repositories: :none' >> cabal.project.local
 
-            ${dispatcher withWasmMeta platform} cabal build --offline exe:reflex-todomvc
+            ${dispatcher driver p platform} cabal build --offline exe:reflex-todomvc
           '';
 
           installPhase = ''
