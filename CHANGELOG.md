@@ -36,7 +36,7 @@
   `# FIXME` line, and a short default for `evalPackages`.
 - The ghc-wasm-meta module makes the bindist's `ghc --info` report the
   `ghc-internal` id of its own database, which cabal 3.18 checks.
-- Pins: haskell.nix `e39eab3`, nixpkgs `7dcdd87` (nixos-26.05),
+- Pins: haskell.nix `ebf9326`, nixpkgs `ac588ef` (nixos-26.05),
   ghc-wasm-meta `8079eb96`.
 
 ### Changed (breaking)
@@ -45,11 +45,32 @@
   `libs/` into `libs/common/`. `shell-packages-selection.nix` is now
   `libs/common/local-packages-selection.nix`.
 - `libs/nixpkgs/project-file.nix` no longer takes a `parser` argument.
+- The haskell.nix driver's wasm wrapper in the shell is
+  `wasm32-unknown-wasip1`, not `wasm32-unknown-wasi`. haskell.nix's
+  nixpkgs now spells the wasi32 target that way. The ghc-wasm-meta
+  bindist's wrapper stays `wasm32-wasi`.
+- `native-ldflags-hook` is called with `{ ghcs }`, the cross compilers of
+  the selected platforms, not with `{ platforms }`. Each driver calls it
+  for its own shell. The common `shell.shellHook` no longer carries it.
+  `libs/cross/native-ldflags-hook.nix` takes only `{ lib }`.
+- `libs/nixpkgs/driver.nix` takes `native-ldflags-hook`.
+- `targetKey` from `libs/compiler` takes the lib of the nixpkgs that made
+  the platform first: `targetKey pkgs.lib platform`.
 
 ### Fixed
 
 - `shell.withHoogle = false` had no effect in the haskell.nix driver. Its
   shell built hoogle and the documentation anyway.
+- The haskell.nix driver found no `platforms.<name>` entry for a target
+  that its own nixpkgs spells differently from the project's nixpkgs. The
+  target then built with haskell.nix's own compiler, not the entry's (for
+  example the ghc-wasm-meta bindist), and `platforms.<name>.packages` had
+  no effect.
+- The shell hook that keeps native and cross link flags apart read the
+  target triples from the project's nixpkgs. In a haskell.nix shell, a
+  target that haskell.nix's nixpkgs spells differently could keep its `-L`
+  paths in the native `NIX_LDFLAGS`. The hook now reads the target
+  prefixes from the cross compilers.
 
 ## Release 1.0
 
