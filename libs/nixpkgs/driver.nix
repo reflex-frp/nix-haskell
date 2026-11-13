@@ -14,12 +14,14 @@
 # - `haskell-nix`: the haskell.nix mirror values, read only under
 #   `options.use-plan`
 # - `cross-wrappers`: the wrapper-script function
+# - `native-ldflags-hook`: the function that writes the hook keeping native
+#   and cross link flags apart
 #
 # Example:
 #
 #   import ./driver.nix {
 #     inherit pkgs haskellPackages lib common options
-#       haskell-nix-src haskell-nix cross-wrappers;
+#       haskell-nix-src haskell-nix cross-wrappers native-ldflags-hook;
 #   }
 #   => { packages.hello = <derivation>;
 #        haskellPackages = <the extended package set>;
@@ -38,6 +40,7 @@
 , haskell-nix-src
 , haskell-nix
 , cross-wrappers
+, native-ldflags-hook
 }:
 
 with (import ../common { inherit lib; });
@@ -359,10 +362,11 @@ let compose = pkgs.haskell.lib.compose;
            inherit pkgs;
          };
 
-    crossWrappers =
+    crossGhcs =
       let probe = (import ../cross/platform.nix { inherit lib; }).probe pkgs;
-      in lib.concatMap (platform: cross-wrappers { ghc = crossGhcEnv platform; inherit pkgs; })
-           (common.shell.crossPlatforms probe);
+      in map crossGhcEnv (common.shell.crossPlatforms probe);
+
+    crossWrappers = lib.concatMap (ghc: cross-wrappers { inherit ghc pkgs; }) crossGhcs;
 
     shellArgs = {
       packages = _: selection selectionSet;
@@ -372,7 +376,7 @@ let compose = pkgs.haskell.lib.compose;
         ++ common.shell.nativeBuildInputs
         ++ crossWrappers;
       buildInputs = common.shell.buildInputs;
-      shellHook = common.shell.shellHook;
+      shellHook = native-ldflags-hook { ghcs = crossGhcs; } + common.shell.shellHook;
     } // lib.optionalAttrs (common.name != null) { name = "${common.name}-shell"; }
       // options.shellFor-args;
 
@@ -390,7 +394,7 @@ let compose = pkgs.haskell.lib.compose;
           pkgs = platformPkgs;
           compiler = resolveCompiler crossPlatform;
         };
-        inherit lib common options haskell-nix-src haskell-nix cross-wrappers;
+        inherit lib common options haskell-nix-src haskell-nix cross-wrappers native-ldflags-hook;
         platform = crossPlatform;
       });
 

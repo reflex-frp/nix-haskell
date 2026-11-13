@@ -3431,6 +3431,27 @@ false
 .UR file://%3Cnix-haskell%3E/modules/haskell.nix
 /modules/haskell.nix
 .UE \c
+.SS haskell\-nix.options.flake.doHaddock
+Specifies if the flake \f[CR]ciJobs\f[R] and \f[CR]hydraJobs\f[R] should
+include a \f[CR]haddock\f[R] group building the documentation
+(\f[CR].doc\f[R]) of each library/test component that has haddock
+enabled, so that broken documentation is caught by CI (see #1932).
+Packages with an empty library (no exposed modules) fail with
+\(lqhaddock: No input file(s)\(rq; set
+\f[CR]packages.<name>.doHaddock = false\f[R] for those.
+.PP
+\f[I]Type:\f[R] boolean
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+false
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/haskell.nix
+/modules/haskell.nix
+.UE \c
 .SS haskell\-nix.options.flake.variants
 This allows flakes to easily include variations of the project by with
 different project arguments.
@@ -3928,9 +3949,9 @@ How the v2 shell\(cqs pre\-built library deps are made visible to tools
 the user runs.
 One of:
 .IP \(bu 2
-\(lqcabal\-store\(rq (default) \(em the composed store is copied into
-\f[CR]\(ti/.cabal/store/<ghc>\-inplace/\f[R] via a shellHook (or the
-explicit \f[CR]haskell\-nix\-cabal\-store\-sync\f[R] command).
+\(lqcabal\-store\(rq (default) \(em the composed store is linked into
+the cabal store (\f[CR]cabal path \-\-store\-dir\f[R]) via a shellHook
+(or the explicit \f[CR]haskell\-nix\-cabal\-store\-sync\f[R] command).
 \f[CR]cabal v2\-build\f[R] then reuses the units directly.
 The shell\(cqs \f[CR]ghc\f[R] is left plain, so
 \f[CR]runghc\f[R]/\f[CR]ghci\f[R] will not see the deps.
@@ -4142,6 +4163,38 @@ override is harmless (v1 doesn\(cqt enforce UnitId alignment).
 .IP
 .EX
 false
+.EE
+.PP
+\f[I]Declared by:\f[R] \- \c
+.UR file://%3Cnix-haskell%3E/modules/haskell.nix
+/modules/haskell.nix
+.UE \c
+.SS haskell\-nix.options.usePatchedHsc2hs
+Offer cabal\(cqs solver haskell.nix\(cqs patched hsc2hs as
+\f[CR]hsc2hs\-${pkgs.haskell\-nix.hsc2hs\-patched\-version}\f[R], from a
+small package repository added to the project
+(\f[CR]haskell\-nix\-hsc2hs\f[R]).
+It is stable\-haskell\(cqs batch cross\-compilation fork of hsc2hs with
+haskell.nix\(cqs fix to it (see overlays/hsc2hs.nix), which makes
+cross\-compiled \f[CR].hsc\f[R] files much faster to process \(en around
+15x for the GHC JavaScript backend and 20x for wasm.
+.PP
+It is only a candidate.
+It is chosen when a plan needs hsc2hs as a build tool
+(\f[CR]build\-tool\-depends\f[R] or the legacy \f[CR]build\-tools\f[R])
+and the version satisfies the constraints on it; otherwise cabal picks
+another version as usual.
+Packages that do not ask for hsc2hs keep using the compiler\(cqs.
+.PP
+A project that sets \f[CR]active\-repositories\f[R] has to list
+\f[CR]haskell\-nix\-hsc2hs\f[R] itself for the repository to be used.
+.PP
+\f[I]Type:\f[R] boolean
+.PP
+\f[I]Default:\f[R]
+.IP
+.EX
+true
 .EE
 .PP
 \f[I]Declared by:\f[R] \- \c
@@ -4594,10 +4647,13 @@ with it.
 result.
 Assign it only to replace what the call does.
 .PP
-The shell hook run when \f[CR]shell.crossPlatforms\f[R] selects targets.
-The call carries the selected \f[CR]platforms\f[R] names.
-The default drops every selected target\(cqs \f[CR]\-L\f[R] paths from
-\f[CR]NIX_LDFLAGS\f[R] and \f[CR]NIX_LDFLAGS_FOR_TARGET\f[R].
+The shell hook that keeps native and cross link flags apart.
+Each driver calls it with \f[CR]ghcs\f[R], the cross compilers of the
+platforms \f[CR]shell.crossPlatforms\f[R] selects.
+The default drops every \f[CR]\-L\f[R] path that names one of their
+target prefixes from \f[CR]NIX_LDFLAGS\f[R] and
+\f[CR]NIX_LDFLAGS_FOR_TARGET\f[R].
+It writes nothing when no compiler has a prefix.
 The unfiltered values stay in the environment for the cross wrappers to
 start from.
 .PP
@@ -4613,7 +4669,7 @@ with \(lq\(rsn\(rq
 \f[I]Example:\f[R]
 .IP
 .EX
-{ platforms }: \(dq\(dq
+{ ghcs }: \(dq\(dq
 .EE
 .PP
 \f[I]Declared by:\f[R] \- \c
@@ -5642,6 +5698,7 @@ import <nix\-haskell>/libs/nixpkgs/driver.nix {
   haskell\-nix\-src = config.inputs.\(dqhaskell\-nix\(dq;
   haskell\-nix = config.\(dqhaskell\-nix\(dq;
   cross\-wrappers = config.cross\-wrappers;
+  native\-ldflags\-hook = config.native\-ldflags\-hook;
 }
 .EE
 .PP

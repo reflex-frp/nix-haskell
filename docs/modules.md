@@ -4835,6 +4835,35 @@ false
 
 
 
+## haskell-nix\.options\.flake\.doHaddock
+
+
+
+Specifies if the flake ` ciJobs ` and ` hydraJobs ` should include a
+` haddock ` group building the documentation (` .doc `) of each
+library/test component that has haddock enabled, so that broken
+documentation is caught by CI (see \#1932)\.  Packages with an empty
+library (no exposed modules) fail with “haddock: No input file(s)”;
+set ` packages.<name>.doHaddock = false ` for those\.
+
+
+
+*Type:*
+boolean
+
+
+
+*Default:*
+
+```nix
+false
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/haskell\.nix](file://<nix-haskell>/modules/haskell.nix)
+
+
+
 ## haskell-nix\.options\.flake\.variants
 
 
@@ -4938,8 +4967,6 @@ unspecified value
 
 ## haskell-nix\.options\.ignorePackageYaml
 
-
-
 If set, prevents nix-tools from attempting to load package\.yaml even if it is present\.
 
 
@@ -4961,6 +4988,8 @@ false
 
 
 ## haskell-nix\.options\.index-sha256
+
+
 
 The hash of the truncated hackage index-state
 
@@ -5581,8 +5610,8 @@ false
 How the v2 shell’s pre-built library deps are made visible to
 tools the user runs\.  One of:
 
- - “cabal-store” (default) — the composed store is copied
-   into ` ~/.cabal/store/<ghc>-inplace/ ` via a shellHook
+ - “cabal-store” (default) — the composed store is linked
+   into the cabal store (` cabal path --store-dir `) via a shellHook
    (or the explicit ` haskell-nix-cabal-store-sync ` command)\.
    ` cabal v2-build ` then reuses the units directly\.  The
    shell’s ` ghc ` is left plain, so ` runghc `/` ghci ` will not
@@ -5902,6 +5931,45 @@ boolean
 
 ```nix
 false
+```
+
+*Declared by:*
+ - [<nix-haskell>/modules/haskell\.nix](file://<nix-haskell>/modules/haskell.nix)
+
+
+
+## haskell-nix\.options\.usePatchedHsc2hs
+
+
+
+Offer cabal’s solver haskell\.nix’s patched hsc2hs as
+` hsc2hs-${pkgs.haskell-nix.hsc2hs-patched-version} `, from a small
+package repository added to the project (` haskell-nix-hsc2hs `)\.
+It is stable-haskell’s batch cross-compilation fork of hsc2hs with
+haskell\.nix’s fix to it (see overlays/hsc2hs\.nix), which makes
+cross-compiled ` .hsc ` files much faster to process – around 15x
+for the GHC JavaScript backend and 20x for wasm\.
+
+It is only a candidate\.  It is chosen when a plan needs hsc2hs as a
+build tool (` build-tool-depends ` or the legacy ` build-tools `) and
+the version satisfies the constraints on it; otherwise cabal picks
+another version as usual\.  Packages that do not ask for hsc2hs keep
+using the compiler’s\.
+
+A project that sets ` active-repositories ` has to list
+` haskell-nix-hsc2hs ` itself for the repository to be used\.
+
+
+
+*Type:*
+boolean
+
+
+
+*Default:*
+
+```nix
+true
 ```
 
 *Declared by:*
@@ -6523,11 +6591,13 @@ the base name of ` src `
 **A function, not a setting\.** A project calls it and uses the
 result\. Assign it only to replace what the call does\.
 
-The shell hook run when ` shell.crossPlatforms ` selects targets\.
-The call carries the selected ` platforms ` names\. The default drops
-every selected target’s ` -L ` paths from ` NIX_LDFLAGS ` and
-` NIX_LDFLAGS_FOR_TARGET `\. The unfiltered values stay in the
-environment for the cross wrappers to start from\.
+The shell hook that keeps native and cross link flags apart\. Each
+driver calls it with ` ghcs `, the cross compilers of the platforms
+` shell.crossPlatforms ` selects\. The default drops every ` -L ` path
+that names one of their target prefixes from ` NIX_LDFLAGS ` and
+` NIX_LDFLAGS_FOR_TARGET `\. It writes nothing when no compiler has a
+prefix\. The unfiltered values stay in the environment for the cross
+wrappers to start from\.
 
 
 
@@ -6547,7 +6617,7 @@ function that evaluates to a(n) strings concatenated with “\\n”
 *Example:*
 
 ```
-{ platforms }: ""
+{ ghcs }: ""
 ```
 
 *Declared by:*
@@ -7888,6 +7958,7 @@ import <nix-haskell>/libs/nixpkgs/driver.nix {
   haskell-nix-src = config.inputs."haskell-nix";
   haskell-nix = config."haskell-nix";
   cross-wrappers = config.cross-wrappers;
+  native-ldflags-hook = config.native-ldflags-hook;
 }
 ```
 
@@ -8000,8 +8071,6 @@ false
 
 ## optimizations\.extra
 
-
-
 Extra GHC flags by literal spelling:
 
  - a true value emits its key after the named rows, and GHC takes
@@ -8065,6 +8134,8 @@ false
 
 
 ## optimizations\.specialise
+
+
 
 Enable -fspecialise: specialise each overloaded function for the
 types at which the defining module calls it\.
@@ -8312,8 +8383,6 @@ null
 
 ## platforms\.\<name>\.packages\.\<name>\.enableProfiling
 
-
-
 Whether to build the whole package with profiling support\. ` null ` leaves the default in place\.
 
 
@@ -8359,6 +8428,8 @@ null
 
 
 ## platforms\.\<name>\.packages\.\<name>\.enableShared
+
+
 
 Whether to build a shared library\. ` null ` leaves the default in place\.
 

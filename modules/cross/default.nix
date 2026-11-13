@@ -1,20 +1,18 @@
 # Cross-compilation support: the per-target modules, and the functions
 # both of them need.
 #
-# Each driver builds the per-target wrapper scripts
-# (`wasm32-unknown-wasi ghc --version`) through `cross-wrappers`, with its
-# own cross compilers.
+# Each driver builds these from its own cross compilers:
+# - the per-target wrapper scripts (`wasm32-unknown-wasi ghc --version`),
+#   through `cross-wrappers`
+# - the shell hook that keeps native and cross link flags apart, through
+#   `native-ldflags-hook`
 
-{ config, lib, pkgs, ... }:
+{ lib, ... }:
 
 with lib;
 with (import ../../libs/common { inherit lib; });
 
-let crossPlatform = import ../../libs/cross/platform.nix { inherit lib; };
-
-    selectedCrossPlatforms = config.shell.crossPlatforms (crossPlatform.probe pkgs);
-
-in {
+{
 
   imports = [
     ./ghcjs
@@ -56,27 +54,19 @@ in {
 
     native-ldflags-hook = function-option {
       result = types.lines;
-      default = import ../../libs/cross/native-ldflags-hook.nix { inherit pkgs lib; };
+      default = import ../../libs/cross/native-ldflags-hook.nix { inherit lib; };
       defaultText = fenced-code ''<nix-haskell>/libs/cross/native-ldflags-hook.nix'';
       description = ''
-        The shell hook run when `shell.crossPlatforms` selects targets.
-        The call carries the selected `platforms` names. The default drops
-        every selected target's `-L` paths from `NIX_LDFLAGS` and
-        `NIX_LDFLAGS_FOR_TARGET`. The unfiltered values stay in the
-        environment for the cross wrappers to start from.
+        The shell hook that keeps native and cross link flags apart. Each
+        driver calls it with `ghcs`, the cross compilers of the platforms
+        `shell.crossPlatforms` selects. The default drops every `-L` path
+        that names one of their target prefixes from `NIX_LDFLAGS` and
+        `NIX_LDFLAGS_FOR_TARGET`. It writes nothing when no compiler has a
+        prefix. The unfiltered values stay in the environment for the cross
+        wrappers to start from.
       '';
-      example = fenced-code ''{ platforms }: ""'';
+      example = fenced-code ''{ ghcs }: ""'';
     };
-
-  };
-
-  config = {
-
-    # A shell with cross targets carries native and cross dependencies, and
-    # each linker fails on the other side's objects. The hook keeps their
-    # `-L` paths apart.
-    shell.shellHook = mkIf (selectedCrossPlatforms != [])
-      (config.native-ldflags-hook { platforms = selectedCrossPlatforms; });
 
   };
 

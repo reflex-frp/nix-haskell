@@ -143,6 +143,7 @@ in {
           haskell-nix-src = config.inputs."haskell-nix";
           haskell-nix = config."haskell-nix";
           cross-wrappers = config.cross-wrappers;
+          native-ldflags-hook = config.native-ldflags-hook;
         };
         defaultText = fenced-code ''
           import <nix-haskell>/libs/nixpkgs/driver.nix {
@@ -154,6 +155,7 @@ in {
             haskell-nix-src = config.inputs."haskell-nix";
             haskell-nix = config."haskell-nix";
             cross-wrappers = config.cross-wrappers;
+            native-ldflags-hook = config.native-ldflags-hook;
           }
         '';
         description = ''

@@ -86,7 +86,6 @@ in {
       optimizations.via = "writes the common `ghcOptions` option";
       isGhcjs.via = "adds nodejs to the common `shell.buildInputs`";
       isWasm.via = "adds nodejs to the common `shell.buildInputs`";
-      native-ldflags-hook.via = "consumed by the common `shell.shellHook`";
 
       wasm-opt.via = "nothing the driver builds; read by `wasm-optimize`";
       closure-compiler.via = "nothing the driver builds; read by `js-optimize`";

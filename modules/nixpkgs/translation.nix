@@ -71,6 +71,7 @@ in {
       "shell.crossPlatforms".via = "cross wrapper scripts from the selected `pkgsCross` compilers; full cross package sets under `project.projectCross`";
 
       cross-wrappers.via = "called with the wrapped cross compiler of every selected platform; the scripts join the shell's `nativeBuildInputs`";
+      native-ldflags-hook.via = "called with the wrapped cross compiler of every selected platform; the hook comes before the common `shell.shellHook`";
 
       inputs.via = "`inputs.pkgs` supplies the package set; `inputs.haskell-nix` supplies the reused parsers";
 

@@ -47,11 +47,11 @@ let translations = import ../../libs/driver/translation.nix { inherit lib; };
     # Shell inputs
     # ------------------------------------------------------------------------
 
-    # Wrapper scripts for the cross platforms selected by
-    # `shell.crossPlatforms`, built from this driver's own cross projects.
-    crossWrappers =
-      concatMap (p: config.cross-wrappers { ghc = p.shell.ghc; inherit pkgs; })
-        (cfg.shell.crossPlatforms cfg.project.projectCross);
+    # The shell compilers of this driver's own cross projects, for the
+    # platforms `shell.crossPlatforms` selects.
+    crossGhcs = map (p: p.shell.ghc) (cfg.shell.crossPlatforms cfg.project.projectCross);
+
+    crossWrappers = concatMap (ghc: config.cross-wrappers { inherit ghc pkgs; }) crossGhcs;
 
     # ------------------------------------------------------------------------
     # Per-package modules
@@ -279,6 +279,8 @@ in {
       "shell.crossPlatforms".via = "`shell.crossPlatforms` (haskell.nix cross projects are keyed by the same `pkgsCross` names)";
 
       cross-wrappers.via = "called with the shell ghc of every cross project `shell.crossPlatforms` selects; the scripts join the shell's inputs";
+      native-ldflags-hook.set = { shell.shellHook = config.native-ldflags-hook { ghcs = crossGhcs; }; };
+      native-ldflags-hook.via = "called with the shell ghc of every cross project `shell.crossPlatforms` selects; the hook joins haskell.nix's `shell.shellHook`";
 
       inputs.via = "`inputs.haskell-nix` supplies the haskell.nix checkout the driver imports";
 
